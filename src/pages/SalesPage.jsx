@@ -2,9 +2,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import toast from 'react-hot-toast';
-import ConfirmationModal from '../components/ConfirmationModal'; // Importar o modal de confirmação
+import ConfirmationModal from '../components/ConfirmationModal';
 
-// Estilos (do seu código da mensagem #122)
+// Estilos
 const inputStyle = {
   width: '100%', padding: '10px', boxSizing: 'border-box', borderRadius: '4px',
   border: '1px solid #555', backgroundColor: '#333', color: 'white', fontSize: '1rem',
@@ -13,7 +13,6 @@ const selectStyle = { ...inputStyle };
 const textareaStyle = { ...inputStyle, height: 'auto', minHeight: '80px', resize: 'vertical' };
 const readOnlyStyle = { ...inputStyle, backgroundColor: '#444', cursor: 'default' };
 
-// initialSaleHeaderFormData (do seu código da mensagem #122)
 const initialSaleHeaderFormData = {
   sale_date: new Date().toISOString().split('T')[0],
   customer_id: '',
@@ -23,7 +22,6 @@ const initialSaleHeaderFormData = {
   observations: '',
 };
 
-// initialSaleItemFormData (do seu código da mensagem #122)
 const initialSaleItemFormData = {
   product_id: '',
   product_name: '', 
@@ -32,7 +30,6 @@ const initialSaleItemFormData = {
   item_total_amount: 0,
 };
 
-// initialPaymentFormData e paymentMethods (do seu código da mensagem #122)
 const initialPaymentFormData = {
     payment_date: new Date().toISOString().split('T')[0], payment_method: 'Dinheiro',
     amount: '', observations: ''
@@ -40,7 +37,6 @@ const initialPaymentFormData = {
 const paymentMethods = ["Dinheiro", "PIX", "Cartão de Crédito", "Cartão de Débito", "Transferência Bancária", "Boleto"];
 
 function SalesPage() {
-  // Todos os seus estados como estavam na mensagem #122
   const [sales, setSales] = useState([]);
   const [loadingSales, setLoadingSales] = useState(true);
   const [listError, setListError] = useState(null);
@@ -66,7 +62,6 @@ function SalesPage() {
   const [paymentFormData, setPaymentFormDataState] = useState(initialPaymentFormData);
   const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
 
-  // Estados para o ConfirmationModal de exclusão de venda
   const [showDeleteSaleModal, setShowDeleteSaleModal] = useState(false);
   const [saleToDelete, setSaleToDelete] = useState(null);
   const [isDeletingSale, setIsDeletingSale] = useState(false);
@@ -82,7 +77,7 @@ function SalesPage() {
     async function loadPageData() {
       setLoadingFormDataSources(true);
       const customersDataPromise = fetchCustomers();
-      const salespeopleDataPromise = fetchSalespeople();
+      const salespeopleDataPromise = fetchSalespeople(); // Esta função será modificada
       const productsDataPromise = fetchProductsForSelect();
       const costCentersDataPromise = fetchCostCentersForSelect();
       try {
@@ -118,7 +113,6 @@ function SalesPage() {
     setDisplayOverallCommissionValue(commissionVal);
   }, [currentSaleItems, saleHeaderFormData.commission_percentage]);
 
-  // String de SELECT para o cabeçalho da venda (como no seu código #122, limpa de comentários)
   const saleHeaderBaseSelectString = `
     sale_id, sale_date, overall_total_amount, observations, 
     sale_display_id, sale_year, sale_number_in_year, 
@@ -129,20 +123,18 @@ function SalesPage() {
     cost_center:cost_centers(name)
   `;
 
-  async function fetchSales() { // Como no seu código #122
+  async function fetchSales() {
     setLoadingSales(true);
     try {
       setListError(null);
       const { data: salesData, error: salesError } = await supabase
         .from('sales')
-        .select(saleHeaderBaseSelectString) // Usando a string limpa
+        .select(saleHeaderBaseSelectString)
         .order('sale_year', { ascending: false })
         .order('sale_number_in_year', { ascending: false })
         .order('sale_date', { ascending: false }) 
         .order('created_at', { ascending: false });
-
       if (salesError) throw salesError;
-
       if (salesData) {
         const salesWithDetails = await Promise.all(
           salesData.map(async (sale) => {
@@ -154,12 +146,10 @@ function SalesPage() {
             const saleTotal = parseFloat(sale.overall_total_amount) || 0;
             if (totalPaid >= saleTotal - 0.001 && saleTotal > 0) { paymentStatus = 'Recebido'; } 
             else if (totalPaid > 0) { paymentStatus = 'Parcial'; }
-
             const { data: items, error: itemsError } = await supabase
               .from('sale_items').select('product_name_at_sale').eq('sale_id', sale.sale_id).limit(1);
             if(itemsError) console.error(`Erro ao buscar item para venda ${sale.sale_id}:`, itemsError.message);
             const firstProductName = items && items.length > 0 ? items[0].product_name_at_sale : 'Itens Diversos';
-            
             return { ...sale, total_paid: totalPaid, payment_status: paymentStatus, first_product_name: firstProductName };
           })
         );
@@ -172,19 +162,32 @@ function SalesPage() {
     } finally { setLoadingSales(false); }
   }
 
-  async function fetchCustomers() { // Como no seu código #122
+  async function fetchCustomers() {
     try {
       const { data, error } = await supabase.from('merchants').select('merchant_id, name').or('merchant_type.eq.Cliente,merchant_type.eq.Ambos').order('name', { ascending: true });
       if (error) throw error; if (data) setCustomers(data); else setCustomers([]);
     } catch (err) { console.error('Erro ao buscar clientes:', err.message); toast.error('Falha ao carregar clientes.'); setCustomers([]); }
   }
-  async function fetchSalespeople() { // Como no seu código #122
+
+  // --- fetchSalespeople MODIFICADA para filtrar por is_active ---
+  async function fetchSalespeople() {
     try {
-      const { data, error } = await supabase.from('salespeople').select('salesperson_id, name').order('name', { ascending: true });
-      if (error) throw error; if (data) setSalespeople(data); else setSalespeople([]);
-    } catch (err) { console.error('Erro ao buscar vendedores:', err.message); toast.error('Falha ao carregar vendedores.'); setSalespeople([]); }
+      const { data, error } = await supabase
+        .from('salespeople')
+        .select('salesperson_id, name')
+        .eq('is_active', true) // << FILTRO ADICIONADO AQUI
+        .order('name', { ascending: true });
+      if (error) throw error; 
+      setSalespeople(data || []); // Garante que seja um array
+    } catch (err) { 
+      console.error('Erro ao buscar vendedores:', err.message); 
+      toast.error('Falha ao carregar vendedores.'); 
+      setSalespeople([]); 
+    }
   }
-  async function fetchProductsForSelect() { // Como no seu código #122
+  // --- FIM DA MODIFICAÇÃO ---
+
+  async function fetchProductsForSelect() {
     try {
       const { data, error } = await supabase
         .from('products').select('product_id, name, sale_price')
@@ -195,7 +198,7 @@ function SalesPage() {
       setProductsList(data || []);
     } catch (err) { console.error('Erro ao buscar produtos:', err.message); toast.error('Falha ao carregar produtos.'); setProductsList([]); }
   }
-  async function fetchCostCentersForSelect() { // Como no seu código #122
+  async function fetchCostCentersForSelect() {
     try {
       const { data, error } = await supabase
         .from('cost_centers').select('cost_center_id, name')
@@ -206,12 +209,12 @@ function SalesPage() {
     } catch (err) { console.error('Erro ao buscar Centros de Custo:', err.message); toast.error('Falha ao carregar Centros de Custo.'); setCostCentersList([]); }
   }
   
-  const handleHeaderInputChange = (event) => { // Como no seu código #122
+  const handleHeaderInputChange = (event) => {
     const { name, value } = event.target;
     setSaleHeaderFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleItemInputChange = (event) => { // Como no seu código #122
+  const handleItemInputChange = (event) => {
     const { name, value } = event.target;
     let newFormData = { ...currentItemFormData, [name]: value };
     if (name === 'product_id') {
@@ -223,7 +226,7 @@ function SalesPage() {
     setCurrentItemFormData(newFormData);
   };
   
-  const handleAddItemToSale = () => { // Como no seu código #122
+  const handleAddItemToSale = () => {
     if (!currentItemFormData.product_id) { toast.error('Selecione um produto para o item.'); return; }
     const quantity = parseFloat(String(currentItemFormData.quantity).replace(',','.'));
     if (isNaN(quantity) || quantity <= 0) { toast.error('Quantidade do item deve ser um número positivo.'); return; }
@@ -242,11 +245,11 @@ function SalesPage() {
     if (addItemFormRef.current) addItemFormRef.current.querySelector('select[name="product_id"]')?.focus();
   };
 
-  const handleRemoveItemFromSale = (indexToRemove) => { // Como no seu código #122
+  const handleRemoveItemFromSale = (indexToRemove) => {
     setCurrentSaleItems(prevItems => prevItems.filter((_, index) => index !== indexToRemove));
   };
   
-  const resetAllForms = () => { // Como no seu código #122
+  const resetAllForms = () => { 
     const currentCostCenterId = saleHeaderFormData.cost_center_id;
     setSaleHeaderFormData(initialSaleHeaderFormData);
     if (currentCostCenterId !== undefined && currentCostCenterId !== '') {
@@ -258,15 +261,14 @@ function SalesPage() {
     setCurrentSaleId(null);
   };
   
-  // --- handlePaymentInputChange DEFINIDO CORRETAMENTE ---
   const handlePaymentInputChange = (event) => {
     const { name, value } = event.target;
     setPaymentFormDataState(prev => ({ ...prev, [name]: value }));
   };
   
-  const resetPaymentForm = () => { setPaymentFormDataState(initialPaymentFormData); }; // Como no seu código #122
+  const resetPaymentForm = () => { setPaymentFormDataState(initialPaymentFormData); };
 
-  const handleSubmitSale = async (event) => { // Como no seu código #122, mas usando saleHeaderBaseSelectString para o retorno
+  const handleSubmitSale = async (event) => {
     event.preventDefault();
     if (!saleHeaderFormData.sale_date) { toast.error('Data da venda é obrigatória.'); return; }
     if (!saleHeaderFormData.customer_id) { toast.error('Cliente é obrigatório.'); return; }
@@ -306,7 +308,7 @@ function SalesPage() {
       if (isEditing && currentSaleId) {
         const { data: updatedSaleHeader, error: updateHeaderError } = await supabase
           .from('sales').update(saleHeaderDataToSubmit).eq('sale_id', currentSaleId)
-          .select('sale_id, sale_display_id').single(); // Apenas o necessário para os itens
+          .select('sale_id, sale_display_id').single();
         if (updateHeaderError) throw updateHeaderError;
         
         saleIdToUse = updatedSaleHeader.sale_id;
@@ -350,7 +352,7 @@ function SalesPage() {
     }
   };
   
-  const handleEditSale = async (saleToEdit) => { // Como no seu código #122
+  const handleEditSale = async (saleToEdit) => {
     setIsEditing(true); setCurrentSaleId(saleToEdit.sale_id);
     const saleDate = saleToEdit.sale_date ? new Date(saleToEdit.sale_date + 'T00:00:00Z').toISOString().split('T')[0] : '';
     setSaleHeaderFormData({
@@ -368,7 +370,6 @@ function SalesPage() {
     toast(`Editando Venda ${saleToEdit.sale_display_id || ('#' + String(saleToEdit.sale_id).substring(0,6))}...`);
   };
 
-  // --- handleDeleteSale MODIFICADO para usar o ConfirmationModal ---
   const handleDeleteSale = (saleId, saleIdentifier) => {
     setSaleToDelete({ id: saleId, identifier: saleIdentifier });
     setShowDeleteSaleModal(true);
@@ -380,12 +381,10 @@ function SalesPage() {
     try {
       const { error: deleteTransError } = await supabase.from('transactions').delete().eq('reference_id', saleToDelete.id).eq('transaction_type', 'Venda');
       if (deleteTransError) {
-        toast.error(`Aviso: Não foi possível excluir pagamentos associados: ${deleteTransError.message}.`);
+        toast.error(`Aviso: Não foi possível excluir pagamentos: ${deleteTransError.message}.`);
       }
-      // ON DELETE CASCADE na tabela 'sale_items' (definido no BD com o script da mensagem #114) deve excluir os itens.
       const { error } = await supabase.from('sales').delete().eq('sale_id', saleToDelete.id);
       if (error) throw error;
-      
       await fetchSales(); 
       toast.success(`Venda "${saleToDelete.identifier}" e dados associados foram excluídos!`);
     } catch (err) { 
@@ -397,7 +396,6 @@ function SalesPage() {
       setIsDeletingSale(false);
     }
   };
-  // --- FIM DAS MODIFICAÇÕES EM handleDeleteSale ---
   
   const openPaymentModal = async (sale) => { setSelectedSaleForPayment(sale); setShowPaymentModal(true); await fetchPaymentsForSaleInternal(sale.sale_id); };
   const closePaymentModal = () => { setShowPaymentModal(false); setSelectedSaleForPayment(null); setPaymentsForSelectedSale([]); resetPaymentForm();};
@@ -409,7 +407,7 @@ function SalesPage() {
     } catch (err) { console.error('Erro pagamentos:', err.message); toast.error('Falha carregar pagamentos.');
     } finally { setLoadingPayments(false); }
   }
-  const handleSubmitPayment = async (event) => { // Como no seu código #122 (já chama fetchSales)
+  const handleSubmitPayment = async (event) => { 
     event.preventDefault(); if (!selectedSaleForPayment) return;
     const paymentAmountStr = String(paymentFormData.amount).replace(',', '.');
     const paymentAmount = parseFloat(paymentAmountStr);
@@ -435,7 +433,7 @@ function SalesPage() {
     } catch (err) { console.error('Erro pag.:', err.message); toast.error(`Erro pag.: ${err.message}`);
     } finally { setIsSubmittingPayment(false); }
   };
-  const getPaymentStatusStyle = (status) => { // Como no seu código #122
+  const getPaymentStatusStyle = (status) => {
     let style = { marginLeft: '10px', padding: '3px 8px', fontSize: '0.8em', borderRadius: '4px', color: 'white', border: '1px solid' };
     switch (status) {
       case 'Recebido': style.backgroundColor = '#28a745'; style.borderColor = '#1e7e34'; break;
@@ -446,7 +444,6 @@ function SalesPage() {
     return style;
   };
 
-  // Condições de Loading e Erro (como no seu código #122)
   if ((loadingSales && sales.length === 0) || loadingFormDataSources) {
     return <p style={{ padding: '20px' }}>Carregando dados da página de vendas...</p>;
   }

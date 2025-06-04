@@ -3,9 +3,10 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import toast from 'react-hot-toast';
+// 1. Importar componentes do Recharts
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 
-// Estilos
+// Estilos (mantidos da sua versão anterior do HomePage)
 const dashboardStyles = {
   container: {
     display: 'flex',
@@ -27,17 +28,18 @@ const dashboardStyles = {
     flexDirection: 'column',
     justifyContent: 'space-between',
   },
-  chartCard: {
+  chartCard: { // Estilo específico para o card do gráfico
     backgroundColor: '#ffffff',
     border: '1px solid #e0e0e0',
     borderRadius: '8px',
     padding: '20px',
     boxSizing: 'border-box',
     boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-    flexBasis: '100%',
-    minHeight: '400px',
+    flexBasis: '100%', // Ocupa a largura total
+    minHeight: '400px', // Altura mínima para o gráfico
     display: 'flex',
     flexDirection: 'column',
+    marginTop: '20px', // Adiciona espaço acima do card do gráfico
   },
   cardTitle: {
     margin: '0 0 10px 0',
@@ -73,7 +75,9 @@ const dashboardStyles = {
   },
 };
 
-const barColors = ["#8884d8", "#82ca9d", "#ffc658", "#ff7300", "#0088FE", "#00C49F"];
+// Cores para as barras do gráfico (exemplo)
+const barColors = ["#8884d8", "#82ca9d", "#ffc658", "#ff7300", "#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#00C49F", "#FFBB28", "#FF8042"];
+
 
 function HomePage({ session }) {
   const [counts, setCounts] = useState({
@@ -83,13 +87,17 @@ function HomePage({ session }) {
   const [financialSummaries, setFinancialSummaries] = useState({
     monthlySalesTotal: 0, monthlyPurchasesTotal: 0, cashBalance: 0,
   });
+  // --- NOVO ESTADO PARA DADOS DO GRÁFICO ---
   const [monthlySalesChartData, setMonthlySalesChartData] = useState([]);
   const [loadingData, setLoadingData] = useState(true);
 
   // Helper para converter nome do mês abreviado para número (0-11)
+  // Movido para fora do useEffect para estar acessível globalmente no componente se necessário
   const getMonthNumber = (monthNameAbbrev) => {
     const months = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
-    return months.indexOf(monthNameAbbrev.toLowerCase().substring(0, 3));
+    // Tenta encontrar o mês, ignorando capitalização e pegando os 3 primeiros caracteres
+    const lowerMonth = monthNameAbbrev.toLowerCase().substring(0, 3);
+    return months.indexOf(lowerMonth);
   };
 
   useEffect(() => {
@@ -98,6 +106,7 @@ function HomePage({ session }) {
     async function fetchDashboardData() {
       setLoadingData(true);
       try {
+        // --- BUSCA DAS CONTAGENS DE CADASTROS ---
         const [
           salesCountRes, customersCountRes, salespeopleCountRes,
           partnersCountRes, productsCountRes, costCentersCountRes
@@ -110,7 +119,7 @@ function HomePage({ session }) {
           supabase.from('cost_centers').select('*', { count: 'exact', head: true }).eq('is_active', true),
         ]);
         
-        const getCountLocal = (res, name) => { // Renomeado para evitar conflito se getCount fosse global
+        const getCountLocal = (res, name) => {
           if (res.error) { console.error(`Erro contagem ${name}:`, res.error.message); toast.error(`Falha total ${name}.`); return 'N/A'; }
           return res.count || 0;
         };
@@ -124,6 +133,7 @@ function HomePage({ session }) {
           costCenters: getCountLocal(costCentersCountRes, 'CCs Ativos'),
         });
 
+        // --- BUSCA DOS DADOS PARA RESUMOS FINANCEIROS ---
         const today = new Date();
         const currentYear = today.getFullYear();
         const currentMonth = today.getMonth() + 1;
@@ -154,6 +164,7 @@ function HomePage({ session }) {
         const cashBalance = totalSalePayments - (totalPurchasePayments + totalWithdrawals);
         setFinancialSummaries({ monthlySalesTotal, monthlyPurchasesTotal, cashBalance });
 
+        // --- BUSCA E PROCESSAMENTO DOS DADOS PARA O GRÁFICO DE VENDAS MENSAIS ---
         const sixMonthsAgo = new Date();
         sixMonthsAgo.setMonth(today.getMonth() - 5); 
         sixMonthsAgo.setDate(1);
@@ -161,36 +172,37 @@ function HomePage({ session }) {
 
         const { data: salesForChart, error: salesChartError } = await supabase
           .from('sales').select('sale_date, overall_total_amount')
-          .gte('sale_date', firstDaySixMonthsAgo).lte('sale_date', endOfMonthStr)
+          .gte('sale_date', firstDaySixMonthsAgo)
+          .lte('sale_date', endOfMonthStr)
           .order('sale_date', { ascending: true });
         if (salesChartError) throw new Error(`Vendas Gráfico: ${salesChartError.message}`);
         
         if (salesForChart) {
           const monthlyData = salesForChart.reduce((acc, sale) => {
-            // Usar YYYY-MM para agrupar e ordenar, depois formatar para exibição
             const yearMonth = sale.sale_date.substring(0, 7); // "YYYY-MM"
             acc[yearMonth] = (acc[yearMonth] || 0) + parseFloat(sale.overall_total_amount || 0);
             return acc;
           }, {});
 
-          const chartData = Object.keys(monthlyData).sort().map(yearMonthKey => { // Ordena por YYYY-MM
+          const chartData = Object.keys(monthlyData).sort().map(yearMonthKey => {
             const [year, month] = yearMonthKey.split('-');
-            // Formata para "MêsAbrev/Ano" para exibição no gráfico
             const dateForLabel = new Date(parseInt(year), parseInt(month) - 1, 1);
-            const monthLabel = dateForLabel.toLocaleDateString('pt-BR', { month: 'short' });
-            const yearLabel = dateForLabel.toLocaleDateString('pt-BR', { year: 'numeric' });
+            // Formato "MêsAbrev./Ano" para o label do eixo X
+            const monthLabel = dateForLabel.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', ''); // Remove ponto de "set." -> "set"
+            const yearLabel = dateForLabel.toLocaleDateString('pt-BR', { year: '2-digit' }); // Ano com 2 dígitos
             return {
-              name: `${monthLabel}/${yearLabel}`,
+              name: `${monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1)}/${yearLabel}`, // Ex: Mai/24
               Vendas: parseFloat(monthlyData[yearMonthKey].toFixed(2)),
             };
           });
           setMonthlySalesChartData(chartData);
+        } else {
+          setMonthlySalesChartData([]);
         }
+
       } catch (error) {
         console.error("Erro ao buscar dados para o dashboard:", error);
         toast.error(`Não foi possível carregar dados do dashboard: ${error.message}`);
-        // Mantém os que funcionaram, N/A para os que falharam (se a lógica de getCountLocal for usada)
-        // Ou reseta tudo para N/A se for um erro geral
         setFinancialSummaries({ monthlySalesTotal: 'N/A', monthlyPurchasesTotal: 'N/A', cashBalance: 'N/A' });
         setMonthlySalesChartData([]);
       } finally {
@@ -203,9 +215,8 @@ function HomePage({ session }) {
     } else {
         setLoadingData(false); 
     }
-  }, [session]);
+  }, [session]); // Re-executa se a sessão mudar
 
-  // --- FUNÇÕES COMPLETAS ---
   const formatCurrency = (value) => {
     if (value === 'N/A' || value === null || value === undefined || isNaN(parseFloat(value))) return 'N/A';
     return parseFloat(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -225,7 +236,6 @@ function HomePage({ session }) {
       )}
     </div>
   );
-  // --- FIM DAS FUNÇÕES COMPLETAS ---
 
   return (
     <div>
@@ -241,24 +251,29 @@ function HomePage({ session }) {
       <div style={dashboardStyles.container}>
         {renderCard("Vendas no Mês", financialSummaries.monthlySalesTotal, "Total vendido no mês corrente.", "/vendas", "Ver Vendas", true)}
         {renderCard("Compras no Mês", financialSummaries.monthlyPurchasesTotal, "Total gasto em compras no mês corrente.", "/compras", "Ver Compras", true)}
-        {renderCard("Saldo de Caixa (Geral)", financialSummaries.cashBalance, "Entradas (vendas) - Saídas (compras + retiradas).", null, null, true)}
+        {renderCard("Saldo de Caixa (Geral)", financialSummaries.cashBalance, "Entradas (vendas pagas) - Saídas (compras pagas + retiradas).", null, null, true)}
         
         <hr style={{width: '100%', borderTop: '1px solid #eee', margin: '10px 0 20px 0'}}/>
 
+        {/* Card do Gráfico de Vendas Mensais */}
         <div style={dashboardStyles.chartCard}>
             <h3 style={dashboardStyles.cardTitle}>Vendas Mensais (Últimos 6 Meses)</h3>
             {loadingData && <p style={{textAlign: 'center', marginTop: '20px'}}>Carregando dados do gráfico...</p>}
             {!loadingData && monthlySalesChartData.length === 0 && <p style={{textAlign: 'center', marginTop: '20px'}}>Não há dados de vendas suficientes para exibir o gráfico.</p>}
             {!loadingData && monthlySalesChartData.length > 0 && (
-                <ResponsiveContainer width="100%" height={360}> {/* Altura fixa para o container do gráfico */}
+                <ResponsiveContainer width="100%" height={360}>
                     <BarChart 
                         data={monthlySalesChartData}
-                        margin={{ top: 20, right: 30, left: 0, bottom: 5 }} 
+                        margin={{ top: 20, right: 30, left: 0, bottom: 20 }} // Aumentado bottom margin para labels do XAxis
                     >
                         <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                        <XAxis dataKey="name" tick={{fontSize: 11}} interval={0} />
+                        <XAxis dataKey="name" tick={{fontSize: 11}} interval={0} angle={-30} textAnchor="end" height={50}/> {/* Rotação e altura para labels */}
                         <YAxis tickFormatter={(value) => `R$${value/1000}k`} tick={{fontSize: 11}} width={70}/>
-                        <Tooltip formatter={(value) => formatCurrency(value)} />
+                        <Tooltip 
+                            formatter={(value, name, props) => [formatCurrency(value), "Total Vendido"]}
+                            labelStyle={{ fontWeight: 'bold' }}
+                            contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.8)', borderRadius: '4px', padding: '5px 10px' }}
+                        />
                         <Legend wrapperStyle={{fontSize: 13, paddingTop: '10px'}}/>
                         <Bar dataKey="Vendas" name="Total Vendido" radius={[4, 4, 0, 0]}>
                             {monthlySalesChartData.map((entry, index) => (
