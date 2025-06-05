@@ -13,6 +13,88 @@ const selectStyle = { ...inputStyle };
 const textareaStyle = { ...inputStyle, height: 'auto', minHeight: '80px', resize: 'vertical' };
 const readOnlyStyle = { ...inputStyle, backgroundColor: '#444', cursor: 'default' };
 
+// --- ÍCONES SVG PARA AÇÕES ---
+const PaymentsIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+    <line x1="1" y1="10" x2="23" y2="10"></line>
+  </svg>
+);
+const EditIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+  </svg>
+);
+const DeleteIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="3 6 5 6 21 6"></polyline>
+    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+    <line x1="10" y1="11" x2="10" y2="17"></line>
+    <line x1="14" y1="11" x2="14" y2="17"></line>
+  </svg>
+);
+// --- FIM DOS ÍCONES SVG ---
+
+// --- COMPONENTE BARRA DE PROGRESSO DO PAGAMENTO ---
+const PaymentProgressBar = ({ paid, total }) => {
+  const paidValue = parseFloat(paid) || 0;
+  const totalValue = parseFloat(total) || 0;
+  let percentage = 0;
+  let barColor = '#e9ecef'; 
+  let borderColor = '#ced4da'; 
+  let textColor = '#495057'; 
+
+  if (totalValue > 0) {
+    percentage = Math.min((paidValue / totalValue) * 100, 100);
+    if (paidValue === 0) {
+      borderColor = '#dc3545'; 
+      barColor = 'transparent'; 
+      textColor = '#dc3545'; 
+    } else if (percentage >= 99.9) { 
+      borderColor = '#28a745'; 
+      barColor = '#28a745';    
+      textColor = '#fff';       
+    } else { 
+      borderColor = '#007bff'; 
+      barColor = '#007bff';    
+      textColor = '#fff';       
+    }
+  } else if (totalValue === 0 && paidValue === 0) { 
+    percentage = 100; 
+    borderColor = '#28a745';
+    barColor = '#28a745';
+    textColor = '#fff';
+  }
+
+  const barContainerStyle = {
+    width: '100%', height: '22px', backgroundColor: '#f8f9fa', 
+    borderRadius: '4px', border: `1px solid ${borderColor}`,
+    overflow: 'hidden', position: 'relative', display: 'flex',
+    alignItems: 'center', justifyContent: 'center',
+  };
+  const barFillStyle = {
+    height: '100%', width: `${percentage}%`, backgroundColor: barColor,
+    transition: 'width 0.4s ease-in-out',
+  };
+  const textStyle = {
+    position: 'absolute', width: '100%', textAlign: 'center',
+    fontSize: '0.75rem', fontWeight: 'bold', color: textColor,
+    lineHeight: '20px', padding: '0 3px', whiteSpace: 'nowrap',
+    overflow: 'hidden', textOverflow: 'ellipsis',
+  };
+
+  return (
+    <div style={barContainerStyle} title={`Pago: R$ ${paidValue.toFixed(2)} de R$ ${totalValue.toFixed(2)}`}>
+      <div style={barFillStyle}></div>
+      <span style={textStyle}>
+        R$ {paidValue.toFixed(2)} / R$ {totalValue.toFixed(2)}
+      </span>
+    </div>
+  );
+};
+// --- FIM DA BARRA DE PROGRESSO ---
+
 const initialSaleHeaderFormData = {
   sale_date: new Date().toISOString().split('T')[0],
   customer_id: '',
@@ -21,7 +103,6 @@ const initialSaleHeaderFormData = {
   commission_percentage: '',
   observations: '',
 };
-
 const initialSaleItemFormData = {
   product_id: '',
   product_name: '', 
@@ -29,7 +110,6 @@ const initialSaleItemFormData = {
   quantity: '1',    
   item_total_amount: 0,
 };
-
 const initialPaymentFormData = {
     payment_date: new Date().toISOString().split('T')[0], payment_method: 'Dinheiro',
     amount: '', observations: ''
@@ -68,6 +148,7 @@ function SalesPage() {
 
   const [displayOverallTotalAmount, setDisplayOverallTotalAmount] = useState(0);
   const [displayOverallCommissionValue, setDisplayOverallCommissionValue] = useState(0);
+  const [filterTextSales, setFilterTextSales] = useState('');
 
   const saleHeaderFormRef = useRef(null); 
   const addItemFormRef = useRef(null); 
@@ -77,7 +158,7 @@ function SalesPage() {
     async function loadPageData() {
       setLoadingFormDataSources(true);
       const customersDataPromise = fetchCustomers();
-      const salespeopleDataPromise = fetchSalespeople(); // Esta função será modificada
+      const salespeopleDataPromise = fetchSalespeople();
       const productsDataPromise = fetchProductsForSelect();
       const costCentersDataPromise = fetchCostCentersForSelect();
       try {
@@ -85,11 +166,14 @@ function SalesPage() {
       } catch (e) { console.error("Erro ao carregar dados para selects:", e); }
       finally { 
         setLoadingFormDataSources(false); 
-        fetchSales(); 
       }
     }
     loadPageData();
   }, []);
+
+  useEffect(() => {
+    fetchSales();
+  }, [filterTextSales]); 
 
   useEffect(() => { 
     const priceStr = String(currentItemFormData.unit_price).replace(',', '.');
@@ -127,14 +211,29 @@ function SalesPage() {
     setLoadingSales(true);
     try {
       setListError(null);
-      const { data: salesData, error: salesError } = await supabase
+      let query = supabase
         .from('sales')
-        .select(saleHeaderBaseSelectString)
+        .select(saleHeaderBaseSelectString);
+
+      if (filterTextSales.trim() !== '') {
+        const searchTerm = `%${filterTextSales.trim()}%`;
+        query = query.or(
+          `sale_display_id.ilike.${searchTerm},` + 
+          `observations.ilike.${searchTerm},` +
+          `merchants.name.ilike.${searchTerm},` + 
+          `cost_centers.name.ilike.${searchTerm}`
+        );
+      }
+
+      query = query
         .order('sale_year', { ascending: false })
         .order('sale_number_in_year', { ascending: false })
         .order('sale_date', { ascending: false }) 
         .order('created_at', { ascending: false });
+
+      const { data: salesData, error: salesError } = await query;
       if (salesError) throw salesError;
+
       if (salesData) {
         const salesWithDetails = await Promise.all(
           salesData.map(async (sale) => {
@@ -142,15 +241,13 @@ function SalesPage() {
               .from('transactions').select('amount').eq('reference_id', sale.sale_id).eq('transaction_type', 'Venda');
             if (paymentsError) console.error(`Erro pagamentos venda ${sale.sale_id}:`, paymentsError.message);
             const totalPaid = payments?.reduce((sum, p) => sum + parseFloat(p.amount), 0) || 0;
-            let paymentStatus = 'A Receber';
-            const saleTotal = parseFloat(sale.overall_total_amount) || 0;
-            if (totalPaid >= saleTotal - 0.001 && saleTotal > 0) { paymentStatus = 'Recebido'; } 
-            else if (totalPaid > 0) { paymentStatus = 'Parcial'; }
+            
             const { data: items, error: itemsError } = await supabase
               .from('sale_items').select('product_name_at_sale').eq('sale_id', sale.sale_id).limit(1);
             if(itemsError) console.error(`Erro ao buscar item para venda ${sale.sale_id}:`, itemsError.message);
             const firstProductName = items && items.length > 0 ? items[0].product_name_at_sale : 'Itens Diversos';
-            return { ...sale, total_paid: totalPaid, payment_status: paymentStatus, first_product_name: firstProductName };
+            
+            return { ...sale, total_paid: totalPaid, first_product_name: firstProductName };
           })
         );
         setSales(salesWithDetails);
@@ -168,25 +265,21 @@ function SalesPage() {
       if (error) throw error; if (data) setCustomers(data); else setCustomers([]);
     } catch (err) { console.error('Erro ao buscar clientes:', err.message); toast.error('Falha ao carregar clientes.'); setCustomers([]); }
   }
-
-  // --- fetchSalespeople MODIFICADA para filtrar por is_active ---
   async function fetchSalespeople() {
     try {
       const { data, error } = await supabase
         .from('salespeople')
         .select('salesperson_id, name')
-        .eq('is_active', true) // << FILTRO ADICIONADO AQUI
+        .eq('is_active', true)
         .order('name', { ascending: true });
       if (error) throw error; 
-      setSalespeople(data || []); // Garante que seja um array
+      setSalespeople(data || []);
     } catch (err) { 
       console.error('Erro ao buscar vendedores:', err.message); 
       toast.error('Falha ao carregar vendedores.'); 
       setSalespeople([]); 
     }
   }
-  // --- FIM DA MODIFICAÇÃO ---
-
   async function fetchProductsForSelect() {
     try {
       const { data, error } = await supabase
@@ -268,6 +361,11 @@ function SalesPage() {
   
   const resetPaymentForm = () => { setPaymentFormDataState(initialPaymentFormData); };
 
+  // << FUNÇÃO handleFilterSalesChange DEFINIDA >>
+  const handleFilterSalesChange = (event) => {
+    setFilterTextSales(event.target.value);
+  };
+
   const handleSubmitSale = async (event) => {
     event.preventDefault();
     if (!saleHeaderFormData.sale_date) { toast.error('Data da venda é obrigatória.'); return; }
@@ -304,11 +402,12 @@ function SalesPage() {
       let saleIdToUse = currentSaleId;
       let successMessage = '';
       let saleDisplayIdForToast = '';
+      const selectReturnString = `sale_id, sale_display_id`;
 
       if (isEditing && currentSaleId) {
         const { data: updatedSaleHeader, error: updateHeaderError } = await supabase
           .from('sales').update(saleHeaderDataToSubmit).eq('sale_id', currentSaleId)
-          .select('sale_id, sale_display_id').single();
+          .select(selectReturnString).single();
         if (updateHeaderError) throw updateHeaderError;
         
         saleIdToUse = updatedSaleHeader.sale_id;
@@ -319,7 +418,7 @@ function SalesPage() {
         if (deleteItemsError) throw deleteItemsError;
       } else {
         const { data: newSaleHeader, error: insertHeaderError } = await supabase
-          .from('sales').insert([saleHeaderDataToSubmit]).select('sale_id, sale_display_id').single();
+          .from('sales').insert([saleHeaderDataToSubmit]).select(selectReturnString).single();
         if (insertHeaderError) throw insertHeaderError;
         saleIdToUse = newSaleHeader.sale_id;
         saleDisplayIdForToast = newSaleHeader.sale_display_id;
@@ -433,38 +532,29 @@ function SalesPage() {
     } catch (err) { console.error('Erro pag.:', err.message); toast.error(`Erro pag.: ${err.message}`);
     } finally { setIsSubmittingPayment(false); }
   };
-  const getPaymentStatusStyle = (status) => {
-    let style = { marginLeft: '10px', padding: '3px 8px', fontSize: '0.8em', borderRadius: '4px', color: 'white', border: '1px solid' };
-    switch (status) {
-      case 'Recebido': style.backgroundColor = '#28a745'; style.borderColor = '#1e7e34'; break;
-      case 'Parcial': style.backgroundColor = '#ffc107'; style.color = '#333'; style.borderColor = '#e0a800'; break;
-      case 'A Receber': style.backgroundColor = '#dc3545'; style.borderColor = '#b02a37'; break;
-      default: style.backgroundColor = '#6c757d'; style.borderColor = '#545b62';
-    }
-    return style;
-  };
+  // getPaymentStatusStyle não é mais necessária
 
-  if ((loadingSales && sales.length === 0) || loadingFormDataSources) {
+  if ((loadingSales && sales.length === 0 && !filterTextSales) || loadingFormDataSources) {
     return <p style={{ padding: '20px' }}>Carregando dados da página de vendas...</p>;
   }
-  if (listError && sales.length === 0) { 
+  if (listError && sales.length === 0 && !filterTextSales) { 
     return <p style={{ color: 'red', padding: '20px' }}>Erro ao carregar vendas: {listError}</p>;
   }
 
   return (
     <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif', maxWidth: '1200px', margin: '0 auto' }}>
-      {/* CSS PARA A TABELA RESPONSIVA DE VENDAS E ITENS (do seu código da mensagem #122) */}
       <style>{`
         .responsive-table-sales { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-radius: 4px; overflow: hidden; }
         .responsive-table-sales thead tr { background-color: #e9ecef; color: #333; text-align: left; }
-        .responsive-table-sales th, .responsive-table-sales td { padding: 10px 12px; border-bottom: 1px solid #ddd; text-align: left; color: #333; }
+        .responsive-table-sales th, .responsive-table-sales td { padding: 10px 12px; border-bottom: 1px solid #ddd; text-align: left; color: #333; vertical-align: middle; }
         .responsive-table-sales th { font-weight: bold; }
         .responsive-table-sales tbody tr { background-color: #fff; }
         .responsive-table-sales tbody tr:nth-of-type(even) { background-color: #f8f9fa; }
         .responsive-table-sales tbody tr:hover { background-color: #e2e6ea; }
-        .responsive-table-sales .actions-cell { text-align: center; min-width: 220px; }
-        .responsive-table-sales .actions-cell div { justify-content: center; }
+        .responsive-table-sales .actions-cell { text-align: center; min-width: 180px; }
+        .responsive-table-sales .actions-cell div { display: flex; justify-content: center; gap: 8px; }
         .responsive-table-sales .currency-cell { text-align: right; }
+        .responsive-table-sales .status-cell { min-width: 150px; }
         @media screen and (max-width: 900px) {
           .responsive-table-sales thead { display: none; }
           .responsive-table-sales tr { display: block; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; background-color: #fff !important; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
@@ -473,20 +563,23 @@ function SalesPage() {
           .responsive-table-sales td::before { content: attr(data-label); position: absolute; left: 10px; width: calc(45% - 20px); padding-right: 10px; white-space: normal; text-align: left; font-weight: bold; color: #495057; }
           .responsive-table-sales td.actions-cell { text-align: center; padding-left: 10px; }
           .responsive-table-sales td.actions-cell::before { content: "Ações:"; }
-          .responsive-table-sales td.actions-cell div { flex-direction: row; gap: 5px !important; }
+          .responsive-table-sales td.actions-cell div { flex-direction: row; gap: 8px !important; justify-content: flex-end; }
           .responsive-table-sales td.currency-cell { text-align: right; padding-left: 50%; }
           .responsive-table-sales td.currency-cell::before { width: calc(50% - 20px); }
+          .responsive-table-sales td.status-cell { padding-left: 10px; text-align: left; }
+          .responsive-table-sales td.status-cell::before { width: auto; position: static; font-weight: bold; display: block; margin-bottom: 5px; text-align: left;}
         }
         .item-list-table { width: 100%; margin-top: 15px; border-collapse: collapse; margin-bottom: 20px; }
         .item-list-table th, .item-list-table td { border: 1px solid #ccc; padding: 8px; text-align: left; color: #333; }
         .item-list-table th { background-color: #f0f0f0; }
         .item-list-table input[type="number"] { width: 80px; padding: 5px; font-size: 0.9em; }
         .item-list-table .action-cell { width: 80px; text-align: center; }
+        .filter-container-sales { margin-bottom: 20px; margin-top: 10px; }
+        .filter-input-sales { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; color: #333; background-color: #fff; }
       `}</style>
 
       <h1>Registro de Vendas</h1>
       
-      {/* Formulário Principal da Venda (Cabeçalho) - Como no seu código #122 */}
       <form onSubmit={handleSubmitSale} ref={saleHeaderFormRef} style={{ marginBottom: '30px', padding: '20px', border: '1px solid #e0e0e0', borderRadius: '8px', backgroundColor: '#f9f9f9', color: '#333' }}>
         <h2>{isEditing ? `Editar Venda ${currentSaleId ? `#${(sales.find(s=>s.sale_id === currentSaleId)?.sale_display_id || String(currentSaleId).substring(0,6)+'...')}` : ''}` : 'Nova Venda'}</h2>
         
@@ -497,8 +590,6 @@ function SalesPage() {
           <div><label htmlFor="salesperson_id_header">Vendedor: *</label><select id="salesperson_id_header" name="salesperson_id" value={saleHeaderFormData.salesperson_id} onChange={handleHeaderInputChange} required style={selectStyle} disabled={loadingFormDataSources || salespeople.length === 0}><option value="">{loadingFormDataSources ? 'Carregando...' : (salespeople.length === 0 ? 'Nenhum vendedor' : 'Selecione...')}</option>{salespeople.map(s=><option key={s.salesperson_id} value={s.salesperson_id}>{s.name}</option>)}</select></div>
         </div>
 
-        {/* Seção para Adicionar Itens à Venda - Como no seu código #122 */}
-        {/* O input de product_name do item será exibido em um <p> ou input readOnly */}
         {!isEditing && ( 
             <div ref={addItemFormRef} style={{padding: '15px', border: '1px dashed #007bff', borderRadius: '4px', marginBottom: '20px'}}>
                 <h4>Adicionar Item à Venda</h4>
@@ -526,7 +617,6 @@ function SalesPage() {
                         Add Item
                     </button>
                 </div>
-                {/* Exibição do nome do produto do item (read-only) */}
                 {currentItemFormData.product_id && currentItemFormData.product_name && (
                     <div style={{marginTop: '10px'}}>
                         <label>Produto Selecionado (Item):</label>
@@ -536,7 +626,6 @@ function SalesPage() {
             </div>
         )}
 
-        {/* Lista de Itens Adicionados à Venda Atual - Como no seu código #122 */}
         {(currentSaleItems.length > 0 ) && (
             <div style={{marginBottom: '20px'}}>
                 <h4>Itens da Venda {isEditing && currentSaleId ? `#${(sales.find(s=>s.sale_id === currentSaleId)?.sale_display_id || String(currentSaleId).substring(0,6)+'...')}` : ''}</h4>
@@ -544,7 +633,7 @@ function SalesPage() {
                     <thead><tr><th>Produto</th><th style={{textAlign: 'right'}}>Qtd</th><th style={{textAlign: 'right'}}>Preço Unit.</th><th style={{textAlign: 'right'}}>Subtotal</th>{!isEditing && <th className="action-cell">Remover</th>}</tr></thead>
                     <tbody>
                         {currentSaleItems.map((item, index) => (
-                            <tr key={item.product_id + '-' + index + '-' + Math.random()}> {/* Chave um pouco mais robusta para itens iguais */}
+                            <tr key={item.product_id + '-' + index + '-' + Math.random()}>
                                 <td>{item.product_name_at_sale}</td>
                                 <td style={{textAlign: 'right'}}>{item.quantity}</td>
                                 <td style={{textAlign: 'right'}}>R$ {parseFloat(item.unit_price_at_sale).toFixed(2)}</td>
@@ -558,7 +647,6 @@ function SalesPage() {
             </div>
         )}
         
-        {/* Total Geral, % Comissão, Observações, Botões de Submit/Cancel - Como no seu código #122 */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px', marginTop: '20px', borderTop: '1px solid #ccc', paddingTop: '15px' }}>
             <div><label style={{ display: 'block', marginBottom: '5px', fontSize: '1.1em', fontWeight: 'bold' }}>TOTAL GERAL DA VENDA:</label><input type="text" value={`R$ ${displayOverallTotalAmount.toFixed(2)}`} readOnly style={{...readOnlyStyle, fontSize: '1.2em', fontWeight: 'bold'}}/></div>
             <div><label htmlFor="commission_percentage_header">% Comissão (total):</label><input type="number" id="commission_percentage_header" name="commission_percentage" value={saleHeaderFormData.commission_percentage} onChange={handleHeaderInputChange} min="0" max="100" step="any" placeholder="0-100" style={inputStyle}/></div>
@@ -576,12 +664,27 @@ function SalesPage() {
       </form>
 
       <h2>Vendas Registradas</h2>
+      <div className="filter-container-sales">
+        <input
+          type="text"
+          placeholder="Filtrar vendas (ID, Cliente, CC, Observações...)"
+          className="filter-input-sales"
+          value={filterTextSales}
+          onChange={handleFilterSalesChange}
+        />
+      </div>
+      {!loadingSales && <p style={{ color: '#333', fontWeight: 'bold', marginTop: '0px', marginBottom: '10px' }}>Total de Vendas: {sales.length} (Exibindo)</p>}
+      {loadingSales && sales.length === 0 && !filterTextSales && <p>Carregando vendas...</p>}
+      {sales.length === 0 && !loadingSales && <p>Nenhuma venda encontrada {filterTextSales ? `para "${filterTextSales}"` : 'registrada ainda.'}</p>}
       {loadingSales && sales.length > 0 && <p>Atualizando lista de vendas...</p>}
-      {sales.length === 0 && !loadingSales ? ( <p>Nenhuma venda registrada ainda.</p> ) : (
+      
+      {sales.length > 0 && (
         <table className="responsive-table-sales">
           <thead>
             <tr>
-              <th>Venda #</th><th>Data</th><th>Cliente</th><th>1º Produto/CC</th><th className="currency-cell">Total</th><th>Status Pag.</th><th className="currency-cell">Saldo</th><th className="actions-cell">Ações</th>
+              <th>Venda #</th><th>Data</th><th>Cliente</th><th>1º Produto/CC</th>
+              <th className="currency-cell">Total</th><th className="status-cell">Status Pag.</th>
+              <th className="currency-cell">Saldo</th><th className="actions-cell">Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -598,14 +701,15 @@ function SalesPage() {
                     {sale.cost_center?.name && <span style={{fontSize: '0.8em', color: '#777', display: 'block'}}> (CC: {sale.cost_center.name})</span>}
                 </td>
                 <td data-label="Total" className="currency-cell">R$ {parseFloat(sale.overall_total_amount).toFixed(2)}</td>
-                <td data-label="Status Pag."><span style={getPaymentStatusStyle(sale.payment_status)}>{sale.payment_status}</span></td>
+                <td data-label="Status Pag." className="status-cell">
+                  <PaymentProgressBar paid={sale.total_paid} total={sale.overall_total_amount} />
+                </td>
                 <td data-label="Saldo" className="currency-cell" style={{color: saldoAReceber > 0.005 ? '#dc3545' : '#28a745', fontWeight: 'bold'}}>R$ {saldoAReceber.toFixed(2)}</td>
                 <td className="actions-cell" data-label="Ações">
-                  <div style={{display: 'flex', gap: '5px', justifyContent: 'center', flexWrap: 'wrap'}}>
-                      <button onClick={() => openPaymentModal(sale)} style={{ padding: '6px 10px', backgroundColor: '#17a2b8', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem', whiteSpace: 'nowrap', marginBottom: '5px' }}>Pagamentos</button>
-                      <button onClick={() => handleEditSale(sale)} style={{ padding: '6px 10px', backgroundColor: '#ffc107', color: '#333', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem', whiteSpace: 'nowrap', marginBottom: '5px' }}>Editar</button>
-                      {/* MODIFICADO: Botão de excluir agora chama handleDeleteSale que abrirá o modal */}
-                      <button onClick={() => handleDeleteSale(sale.sale_id, saleIdentifier)} style={{ padding: '6px 10px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem', whiteSpace: 'nowrap', marginBottom: '5px' }}>Excluir</button>
+                  <div style={{display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap'}}>
+                      <button onClick={() => openPaymentModal(sale)} title="Pagamentos" style={{ padding: '6px', backgroundColor: 'transparent', color: '#17a2b8', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><PaymentsIcon /></button>
+                      <button onClick={() => handleEditSale(sale)} title="Editar" style={{ padding: '6px', backgroundColor: 'transparent', color: '#ffc107', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center'  }}><EditIcon /></button>
+                      <button onClick={() => handleDeleteSale(sale.sale_id, saleIdentifier)} title="Excluir" style={{ padding: '6px', backgroundColor: 'transparent', color: '#dc3545', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><DeleteIcon /></button>
                   </div>
                 </td>
               </tr>
@@ -614,7 +718,7 @@ function SalesPage() {
         </table>
       )}
 
-      {/* Modal de Pagamentos (COMO NO SEU CÓDIGO DA MENSAGEM #122) */}
+      {/* Modal de Pagamentos */}
       {showPaymentModal && selectedSaleForPayment && (
         <div style={{position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1050 }}>
           <div style={{ backgroundColor: '#fff', padding: '30px', borderRadius: '8px', width: '90%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto', color: '#333' }}>
@@ -644,17 +748,12 @@ function SalesPage() {
         </div>
       )}
 
-      {/* MODAL DE CONFIRMAÇÃO PARA EXCLUIR VENDA */}
       <ConfirmationModal
         isOpen={showDeleteSaleModal}
         onClose={() => setShowDeleteSaleModal(false)}
         onConfirm={confirmDeleteSale}
         title="Confirmar Exclusão de Venda"
-        message={
-            saleToDelete ? 
-            <>Deseja realmente excluir a Venda <strong>{saleToDelete.identifier}</strong>? Esta ação também excluirá pagamentos e itens associados e não pode ser desfeita.</> 
-            : "Deseja realmente excluir esta venda?"
-        }
+        message={ saleToDelete ? <>Deseja realmente excluir a Venda <strong>{saleToDelete.identifier}</strong>? Esta ação também excluirá pagamentos e itens associados e não pode ser desfeita.</> : "Deseja realmente excluir esta venda?" }
         confirmText="Excluir Venda"
         cancelText="Cancelar"
         isLoading={isDeletingSale}
