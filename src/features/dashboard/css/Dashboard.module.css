@@ -1,0 +1,76 @@
+/* src/features/dashboard/css/Dashboard.module.css */
+.pageContainer {
+  color: #333;
+}
+
+.welcomeMessage {
+  font-size: 1.1rem;
+  color: #555;
+  margin-bottom: 20px;
+}
+
+.container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 20px 0;
+}
+
+.card {
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 20px;
+  box-sizing: border-box;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  flex-grow: 1;
+  flex-basis: 300px;
+  min-width: 280px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.chartCard {
+  flex-basis: 100%;
+  min-height: 400px;
+  margin-top: 20px;
+}
+
+.cardTitle {
+  margin: 0 0 10px 0;
+  font-size: 1.15rem;
+  color: #333;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+.cardValue {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #007bff;
+  margin: 15px 0;
+  text-align: center;
+}
+
+.cardContent {
+  font-size: 0.95rem;
+  color: #555;
+  flex-grow: 1;
+  margin-bottom: 15px;
+}
+
+.cardLink {
+  display: block;
+  padding: 10px 15px;
+  background-color: #007bff;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  text-align: center;
+  transition: background-color 0.2s ease;
+}
+
+.cardLink:hover {
+  background-color: #0056b3;
+}

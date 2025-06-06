@@ -4,18 +4,19 @@ import { Routes, Route, Link, useNavigate, Navigate, Outlet } from 'react-router
 import './App.css';
 import { supabase } from './lib/supabaseClient';
 
-import SalespeoplePage from './pages/SalespeoplePage';
-import AuthPage from './pages/AuthPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
-import HomePage from './pages/HomePage';
-import MerchantsPage from './pages/MerchantsPage';
-import PartnersPage from './pages/PartnersPage';
-import SalesPage from './pages/SalesPage';
-import PurchasesPage from './pages/PurchasesPage';
-import PartnerWithdrawalsPage from './pages/PartnerWithdrawalsPage';
-import ProductsPage from './pages/ProductsPage';
-import CostCentersPage from './pages/CostCentersPage';
+
+import AuthPage from './pages/AuthPage'; // AuthPage não foi movida, então o caminho continua o mesmo.
+import HomePage from './features/dashboard/HomePage';
+import SalespeoplePage from './features/salespeople/SalespeoplePage';
+import MerchantsPage from './features/merchants/MerchantsPage';
+import PartnersPage from './features/partners/PartnersPage';
+import SalesPage from './features/sales/SalesPage';
+import PurchasesPage from './features/purchases/PurchasesPage';
+import PartnerWithdrawalsPage from './features/partnerWithdrawals/PartnerWithdrawalsPage';
+import ProductsPage from './features/products/ProductsPage';
+import CostCentersPage from './features/costCenters/CostCentersPage';
 
 
 function App() {

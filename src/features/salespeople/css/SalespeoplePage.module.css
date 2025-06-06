@@ -1,0 +1,117 @@
+/* src/features/salespeople/components/SalespeoplePage.module.css */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  font-size: 0.9rem;
+}
+
+.table thead {
+  background-color: #f0f0f0;
+  color: #333;
+}
+
+.table th, .table td {
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: left;
+  color: #333;
+}
+
+.table th {
+  font-weight: bold;
+  cursor: pointer;
+  user-select: none;
+}
+
+.table th:hover {
+  background-color: #d8dcdf;
+}
+
+.sortIcon {
+  margin-left: 5px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.table tbody tr {
+  background-color: #fff;
+}
+
+.table tbody tr:nth-of-type(even) {
+  background-color: #f9f9f9;
+}
+
+.table tbody tr:hover {
+  background-color: #f1f1f1;
+}
+
+.actionsCell {
+  text-align: center;
+  min-width: 120px;
+}
+
+.filterContainer {
+  margin-bottom: 20px;
+  margin-top: 10px;
+}
+
+.filterInput {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+  color: #333;
+  background-color: #fff;
+}
+
+
+/* Media query para responsividade */
+@media screen and (max-width: 768px) {
+  .table thead {
+    display: none;
+  }
+  .table tr {
+    display: block;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #fff !important;
+  }
+  .table td {
+    display: block;
+    text-align: right;
+    padding-left: 50%;
+    position: relative;
+    border-bottom: 1px dotted #eee;
+  }
+  .table td:last-child {
+    border-bottom: none;
+  }
+  .table td::before {
+    content: attr(data-label);
+    position: absolute;
+    left: 10px;
+    width: calc(50% - 20px);
+    padding-right: 10px;
+    white-space: nowrap;
+    text-align: left;
+    font-weight: bold;
+    color: #555;
+  }
+  .actionsCell {
+    text-align: left;
+    padding-left: 10px;
+  }
+  .actionsCell::before {
+    content: "Ações:";
+  }
+  .actionsCell div {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+  .actionsCell div button {
+    margin-bottom: 5px;
+  }
+}
