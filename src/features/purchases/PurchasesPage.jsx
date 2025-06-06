@@ -25,13 +25,14 @@ function PurchasesPage() {
   const [selectedPurchase, setSelectedPurchase] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [purchaseToDelete, setPurchaseToDelete] = useState(null);
-
+  const [isDeleting, setIsDeleting] = useState(false);
+  
   const formRef = useRef(null);
 
   useEffect(() => {
     const price = parseFloat(String(formData.unit_price).replace(',', '.'));
     const qty = parseFloat(String(formData.quantity).replace(',', '.'));
-    setDisplayTotalAmount((price && qty) ? price * qty : 0);
+    setDisplayTotalAmount((!isNaN(price) && !isNaN(qty) && qty > 0) ? price * qty : 0);
   }, [formData.unit_price, formData.quantity]);
 
   const handleInputChange = (e) => {
@@ -52,11 +53,68 @@ function PurchasesPage() {
     setCurrentPurchaseId(null);
   };
   
-  const handleSubmit = async (e) => { /* ... sua lógica de submit aqui ... */ };
-  const handleEdit = (purchase) => { /* ... sua lógica de edição aqui ... */ };
-  const handleDelete = (id, name) => { setPurchaseToDelete({ id, name }); setShowDeleteModal(true); };
-  const confirmDelete = async () => { /* ... sua lógica de exclusão aqui ... */ refetchPurchases(); };
-  const openPaymentModal = (purchase) => { setSelectedPurchase(purchase); setShowPaymentModal(true); };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      const dataToSubmit = { ...formData, total_amount: displayTotalAmount };
+      const { error } = await supabase.from('purchases').upsert({ purchase_id: currentPurchaseId, ...dataToSubmit });
+      if (error) throw error;
+      toast.success('Compra salva com sucesso!');
+      resetForm();
+      refetchPurchases();
+    } catch (error) {
+      toast.error(`Erro ao salvar compra: ${error.message}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEdit = (purchase) => {
+    setIsEditing(true);
+    setCurrentPurchaseId(purchase.purchase_id);
+    setFormData({
+      purchase_date: purchase.purchase_date,
+      supplier_id: purchase.supplier_id,
+      cost_center_id: purchase.cost_center_id,
+      product_id: purchase.product_id,
+      product_name: purchase.product_name,
+      unit_price: purchase.unit_price,
+      quantity: purchase.quantity,
+      observations: purchase.observations || '',
+    });
+    formRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+  
+  const handleDelete = (id, name) => {
+    setPurchaseToDelete({ id, name });
+    setShowDeleteModal(true);
+  };
+  
+  const confirmDelete = async () => {
+    if (!purchaseToDelete) return;
+    setIsDeleting(true);
+    try {
+      // Deleta pagamentos associados primeiro
+      await supabase.from('transactions').delete().eq('reference_id', purchaseToDelete.id).eq('transaction_type', 'Compra');
+      // Deleta a compra
+      await supabase.from('purchases').delete().eq('purchase_id', purchaseToDelete.id);
+      
+      toast.success(`Compra de "${purchaseToDelete.name}" excluída!`);
+      refetchPurchases();
+    } catch (error) {
+      toast.error(`Erro ao excluir: ${error.message}`);
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteModal(false);
+      setPurchaseToDelete(null);
+    }
+  };
+  
+  const openPaymentModal = (purchase) => {
+    setSelectedPurchase(purchase);
+    setShowPaymentModal(true);
+  };
   
   return (
     <div className={styles.pageContainer}>
@@ -98,7 +156,8 @@ function PurchasesPage() {
         onClose={() => setShowDeleteModal(false)}
         onConfirm={confirmDelete}
         title="Confirmar Exclusão"
-        message={purchaseToDelete ? `Deseja realmente excluir a compra de ${purchaseToDelete.name}?` : ""}
+        message={purchaseToDelete ? `Deseja realmente excluir a compra de ${purchaseToDelete.name}? Pagamentos associados também serão excluídos.` : ""}
+        isLoading={isDeleting}
       />
     </div>
   );

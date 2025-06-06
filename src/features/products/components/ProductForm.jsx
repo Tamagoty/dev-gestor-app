@@ -1,12 +1,14 @@
 // src/features/products/components/ProductForm.jsx
 import React from 'react';
 import styles from '../css/ProductsPage.module.css';
+import ToggleSwitch from '../../../components/ToggleSwitch'; // Importa o novo componente
 
 const productTypeOptions = ['Ambos', 'Compra', 'Venda'];
 
 const ProductForm = ({
   formData,
   handleInputChange,
+  handleToggleChange, // Recebe a nova função específica para o toggle
   handleSubmit,
   isEditing,
   isSubmitting,
@@ -54,16 +56,19 @@ const ProductForm = ({
         </div>
       </div>
       
-      <label className={styles.checkboxLabel}>
-        <input type="checkbox" name="is_active" checked={formData.is_active} onChange={handleInputChange} className={styles.checkbox} />
-        Ativo
-      </label>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '15px', marginBottom: '15px' }}>
+        <label>Status Ativo:</label>
+        <ToggleSwitch
+          checked={formData.is_active}
+          onChange={handleToggleChange}
+        />
+      </div>
       
       <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
         <button type="submit" disabled={isSubmitting}>
           {isSubmitting ? 'Salvando...' : (isEditing ? 'Salvar Alterações' : 'Adicionar Produto/Serviço')}
         </button>
-        {isEditing && <button type="button" onClick={resetForm}>Cancelar Edição</button>}
+        {isEditing && (<button type="button" onClick={resetForm}>Cancelar Edição</button>)}
       </div>
     </form>
   );

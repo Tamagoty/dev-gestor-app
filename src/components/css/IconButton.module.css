@@ -1,0 +1,41 @@
+/* src/components/css/IconButton.module.css */
+.iconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px; /* Tamanho do botão */
+  border: none;
+  border-radius: 50%; /* Deixa o botão redondo */
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  color: white; /* Cor do ícone SVG */
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.iconButton:hover {
+  transform: scale(1.1);
+  filter: brightness(1.1);
+}
+
+/* Variantes de Cor */
+.danger {
+  background-color: #dc3545; /* Vermelho */
+}
+.danger:hover {
+  background-color: #c82333;
+}
+
+.warning {
+  background-color: #ffc107; /* Amarelo/Laranja */
+  color: #212529; /* Texto escuro para melhor contraste */
+}
+.warning:hover {
+  background-color: #e0a800;
+}
+
+.info {
+  background-color: #17a2b8; /* Azul 'info' */
+}
+.info:hover {
+  background-color: #138496;
+}

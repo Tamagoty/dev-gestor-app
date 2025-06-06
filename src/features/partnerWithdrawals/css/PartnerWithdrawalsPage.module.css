@@ -39,6 +39,10 @@
   resize: vertical;
 }
 
+/* ================================================= */
+/* ========= INÍCIO DA CORREÇÃO DA TABELA ========== */
+/* ================================================= */
+
 .listTable {
   width: 100%;
   border-collapse: collapse;
@@ -47,15 +51,44 @@
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
-.listTable th, .listTable td {
+.listTable th,
+.listTable td {
   padding: 10px 12px;
   border-bottom: 1px solid #ddd;
   text-align: left;
   color: #333;
 }
-.listTable th { font-weight: bold; background-color: #f0f0f0; }
-.listTable tbody tr:nth-of-type(even) { background-color: #f8f9fa; }
-.listTable tbody tr:hover { background-color: #e9ecef; }
-.currencyCell { text-align: right; }
-.actionsCell { text-align: right; min-width: 160px; }
-.actionsCell div { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+
+.listTable th {
+  font-weight: bold;
+  background-color: #f0f0f0;
+}
+
+/* Regra que corrige as linhas ímpares */
+.listTable tbody tr {
+  background-color: #fff; /* Fundo branco para as linhas ímpares */
+}
+
+.listTable tbody tr:nth-of-type(even) {
+  background-color: #f8f9fa; /* Fundo cinza claro para as linhas pares */
+}
+
+.listTable tbody tr:hover {
+  background-color: #e9ecef;
+}
+
+.currencyCell {
+  text-align: right;
+}
+
+.actionsCell {
+  text-align: right;
+  min-width: 160px;
+}
+
+.actionsCell div {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}

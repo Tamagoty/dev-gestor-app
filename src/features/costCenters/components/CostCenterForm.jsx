@@ -1,10 +1,12 @@
 // src/features/costCenters/components/CostCenterForm.jsx
 import React from 'react';
 import styles from '../css/CostCentersPage.module.css';
+import ToggleSwitch from '../../../components/ToggleSwitch'; // 1. IMPORTA O COMPONENTE
 
 const CostCenterForm = ({
   formData,
   handleInputChange,
+  handleToggleChange, // 2. RECEBE A NOVA FUNÇÃO
   handleSubmit,
   isEditing,
   isSubmitting,
@@ -37,10 +39,14 @@ const CostCenterForm = ({
         </div>
       </div>
       
-      <label className={styles.checkboxLabel}>
-        <input type="checkbox" name="is_active" checked={formData.is_active} onChange={handleInputChange} className={styles.checkbox} />
-        Ativo
-      </label>
+      {/* 3. SUBSTITUI O CHECKBOX ANTIGO PELO TOGGLE SWITCH */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '15px' }}>
+        <label>Status Ativo:</label>
+        <ToggleSwitch
+          checked={formData.is_active}
+          onChange={handleToggleChange}
+        />
+      </div>
       
       <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
         <button type="submit" disabled={isSubmitting}>

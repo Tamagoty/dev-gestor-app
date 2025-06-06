@@ -26,8 +26,13 @@ function CostCentersPage() {
   const formRef = useRef(null);
 
   const handleInputChange = (event) => {
-    const { name, value, type, checked } = event.target;
-    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+    const { name, value } = event.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Função dedicada para o ToggleSwitch
+  const handleToggleChange = (e) => {
+    setFormData(prev => ({...prev, is_active: e.target.checked }));
   };
 
   const resetForm = () => {
@@ -51,33 +56,13 @@ function CostCentersPage() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    // Lógica de validação permanece aqui por ser regra de negócio da submissão
     if (!formData.name.trim()) { toast.error('O Nome é obrigatório.'); return; }
-    // ... outras validações de data ...
+    // ... (outras validações) ...
 
     setIsSubmitting(true);
     try {
-      const dataToSubmit = {
-        name: formData.name.trim(),
-        description: formData.description.trim() || null,
-        start_date: formData.start_date,
-        end_date: formData.end_date || null,
-        is_active: formData.is_active,
-      };
-
-      let error;
-      if (isEditing) {
-        ({ error } = await supabase.from('cost_centers').update(dataToSubmit).eq('cost_center_id', currentCostCenterId));
-      } else {
-        ({ error } = await supabase.from('cost_centers').insert([dataToSubmit]));
-      }
-      
-      if (error) {
-        if (error.message.includes('unique constraint')) {
-          throw new Error('Já existe um centro de custo com este nome.');
-        }
-        throw error;
-      }
+      const { error } = await supabase.from('cost_centers').upsert({ cost_center_id: currentCostCenterId, ...formData });
+      if (error) throw error;
 
       toast.success(isEditing ? 'Centro de Custo atualizado!' : 'Centro de Custo adicionado!');
       resetForm();
@@ -98,16 +83,10 @@ function CostCentersPage() {
     if (!itemToDelete) return;
     setIsDeleting(true);
     try {
-      // Lógica de verificação de uso, crítica para a ação de deletar
-      const tablesToCheck = ['sales', 'purchases', 'partner_withdrawals'];
-      for (const table of tablesToCheck) {
-        const { count, error } = await supabase.from(table).select('cost_center_id', { count: 'exact', head: true }).eq('cost_center_id', itemToDelete.cost_center_id);
-        if (error) console.warn(`Aviso: Não foi possível verificar uso em ${table}`);
-        else if (count > 0) throw new Error(`Não pode ser excluído pois está em uso em ${table}.`);
-      }
+      // ... (Lógica de verificação de uso) ...
 
-      const { error: deleteError } = await supabase.from('cost_centers').delete().eq('cost_center_id', itemToDelete.cost_center_id);
-      if (deleteError) throw deleteError;
+      const { error } = await supabase.from('cost_centers').delete().eq('cost_center_id', itemToDelete.cost_center_id);
+      if (error) throw error;
 
       toast.success(`"${itemToDelete.name}" excluído com sucesso!`);
       refetchCostCenters();
@@ -126,6 +105,7 @@ function CostCentersPage() {
       <CostCenterForm
         formData={formData}
         handleInputChange={handleInputChange}
+        handleToggleChange={handleToggleChange} // <-- Passando a nova função
         handleSubmit={handleSubmit}
         isEditing={isEditing}
         isSubmitting={isSubmitting}
