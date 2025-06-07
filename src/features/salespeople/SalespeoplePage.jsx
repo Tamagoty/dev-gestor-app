@@ -1,20 +1,24 @@
 // src/features/salespeople/SalespeoplePage.jsx
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import toast from 'react-hot-toast';
 
 import { useSalespeople } from './useSalespeople';
+import styles from './css/SalespeoplePage.module.css';
 import SalespersonForm from './components/SalespersonForm';
 import SalespeopleTable from './components/SalespeopleTable';
 import ConfirmationModal from '../../components/ConfirmationModal';
+import Pagination from '../../components/Pagination';
 
 const initialFormData = { name: '', email: '', phone: '', is_active: true };
 
 function SalespeoplePage() {
-  // O hook gerencia os dados da tabela
-  const { salespeople, loading, error, refetch, filterText, setFilterText, sortColumn, sortDirection, handleSort } = useSalespeople();
+  const { 
+    salespeople, loading, error, refetch, filterText, setFilterText,
+    sortColumn, sortDirection, handleSort,
+    currentPage, totalPages, setCurrentPage, itemsPerPage, totalItems
+  } = useSalespeople();
 
-  // Estados relacionados à UI (formulário e modal)
   const [formData, setFormData] = useState(initialFormData);
   const [isEditing, setIsEditing] = useState(false);
   const [currentSalespersonId, setCurrentSalespersonId] = useState(null);
@@ -25,8 +29,12 @@ function SalespeoplePage() {
   const formRef = useRef(null);
 
   const handleInputChange = (event) => {
-    const { name, value, type, checked } = event.target;
-    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+    const { name, value } = event.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleToggleChange = (e) => {
+    setFormData(prev => ({...prev, is_active: e.target.checked }));
   };
 
   const resetForm = () => {
@@ -45,7 +53,6 @@ function SalespeoplePage() {
       is_active: person.is_active,
     });
     formRef.current?.scrollIntoView({ behavior: 'smooth' });
-    toast.info(`Editando vendedor: ${person.name}`);
   };
 
   const handleSubmit = async (event) => {
@@ -54,15 +61,8 @@ function SalespeoplePage() {
     
     setIsSubmitting(true);
     try {
-      const dataToSubmit = {
-        name: formData.name.trim(),
-        email: formData.email.trim() || null,
-        phone: formData.phone.trim() || null,
-        is_active: formData.is_active,
-      };
-      const { error } = await supabase.from('salespeople').upsert({ salesperson_id: currentSalespersonId, ...dataToSubmit });
+      const { error } = await supabase.from('salespeople').upsert({ salesperson_id: currentSalespersonId, ...formData });
       if (error) throw error;
-
       toast.success(isEditing ? 'Vendedor atualizado!' : 'Vendedor adicionado!');
       resetForm();
       refetch();
@@ -100,12 +100,13 @@ function SalespeoplePage() {
   };
 
   return (
-    <div style={{ padding: '20px', maxWidth: '900px', margin: '0 auto' }}>
+    <div className={styles.pageContainer}>
       <h1>Gerenciar Vendedores</h1>
 
       <SalespersonForm
         formData={formData}
         handleInputChange={handleInputChange}
+        handleToggleChange={handleToggleChange}
         handleSubmit={handleSubmit}
         isEditing={isEditing}
         isSubmitting={isSubmitting}
@@ -114,21 +115,38 @@ function SalespeoplePage() {
       />
       
       {error && <p style={{ color: 'red' }}>{error}</p>}
-      {loading && <p>Carregando vendedores...</p>}
-      
-      {!loading && !error && (
-        <SalespeopleTable
-          salespeople={salespeople}
-          handleEditSalesperson={handleEditSalesperson}
-          handleDeleteSalesperson={handleDeleteSalesperson}
-          // Passando explicitamente as props que a tabela precisa
-          filterText={filterText}
-          setFilterText={setFilterText}
-          handleSort={handleSort}
-          sortColumn={sortColumn}
-          sortDirection={sortDirection}
+
+      <div className={styles.filterContainer}>
+        <input
+          type="text"
+          placeholder="Filtrar por nome ou email..."
+          className={styles.input}
+          value={filterText}
+          onChange={(e) => {
+            setFilterText(e.target.value);
+            setCurrentPage(1);
+          }}
         />
-      )}
+      </div>
+      
+      <SalespeopleTable
+        salespeople={salespeople}
+        handleEditSalesperson={handleEditSalesperson}
+        handleDeleteSalesperson={handleDeleteSalesperson}
+        isLoading={loading}
+        handleSort={handleSort}
+        sortColumn={sortColumn}
+        sortDirection={sortDirection}
+      />
+      
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={(page) => setCurrentPage(page)}
+        itemsPerPage={itemsPerPage}
+        totalItems={totalItems}
+        isLoading={loading}
+      />
 
       <ConfirmationModal
         isOpen={showDeleteModal}

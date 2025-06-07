@@ -1,28 +1,182 @@
 /* src/features/sales/css/SalesPage.module.css */
-.pageContainer { padding: 20px; font-family: Arial, sans-serif; max-width: 1200px; margin: 0 auto; }
-.formSection { margin-bottom: 30px; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #f9f9f9; color: #333; }
-.formGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px; }
-.input, .select, .textarea, .readOnlyInput { width: 100%; padding: 10px; box-sizing: border-box; border-radius: 4px; border: 1px solid #ccc; font-size: 1rem; }
-.input, .select, .textarea { background-color: #fff; color: #333; }
-.readOnlyInput { background-color: #e9ecef; cursor: default; }
+.pageContainer {
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  max-width: 1200px;
+  margin: 0 auto;
+  color: #333;
+}
+.pageTitle {
+  color: #e0e0e0; /* Cor clara para bom contraste com fundo escuro */
+  border-bottom: 2px solid #444;
+  padding-bottom: 10px;
+  margin-bottom: 30px;
+}
 
-.itemsManager { padding: 15px; border: 1px dashed #007bff; border-radius: 4px; margin: 20px 0; }
-.itemsManager h4 { margin-top: 0; }
-.itemsTable { width: 100%; margin-top: 15px; border-collapse: collapse; }
-.itemsTable th, .itemsTable td { border: 1px solid #ccc; padding: 8px; text-align: left; color: #333; }
-.itemsTable th { background-color: #f0f0f0; }
+.sectionTitle {
+  color: #dadada; /* Cor clara um pouco mais suave para subtítulos */
+  margin-top: 0;
+}
+.formSection {
+  margin-bottom: 30px;
+  padding: 20px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  color: #333;
+}
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 15px;
+}
+.input,
+.select,
+.textarea,
+.readOnlyInput {
+  width: 100%;
+  padding: 10px;
+  box-sizing: border-box;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+}
+.input,
+.select,
+.textarea {
+  background-color: #fff;
+  color: #333;
+}
+.readOnlyInput {
+  background-color: #e9ecef;
+  cursor: default;
+}
+.itemsManager {
+  padding: 15px;
+  border: 1px dashed #007bff;
+  border-radius: 4px;
+  margin: 20px 0;
+}
+.itemsManager h4 {
+  margin-top: 0;
+}
+.itemsTable {
+  width: 100%;
+  margin-top: 15px;
+  border-collapse: collapse;
+}
+.itemsTable th,
+.itemsTable td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: left;
+  color: #333;
+}
+.itemsTable th {
+  background-color: #f0f0f0;
+}
+.summarySection {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-top: 20px;
+  border-top: 1px solid #ccc;
+  padding-top: 15px;
+}
+.filterContainer {
+  margin-bottom: 20px;
+}
 
-.summarySection { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; border-top: 1px solid #ccc; padding-top: 15px; }
+/* Tabela Principal */
+.listTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  font-size: 0.9rem;
+}
+.listTable th,
+.listTable td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #ddd;
+  text-align: left;
+  color: #333;
+  vertical-align: middle;
+}
+.listTable th {
+  font-weight: bold;
+  background-color: #e9ecef;
+}
+.listTable tbody tr {
+  background-color: #fff;
+}
+.listTable tbody tr:nth-of-type(even) {
+  background-color: #f8f9fa;
+}
+.listTable tbody tr:hover {
+  background-color: #e2e6ea;
+}
+.actionsCell {
+  text-align: center;
+  min-width: 180px;
+}
+.actionsCell div {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+.currencyCell {
+  text-align: right;
+}
+.statusCell {
+  min-width: 150px;
+}
 
-/* CORREÇÃO DA TABELA PRINCIPAL */
-.listTable { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9rem; }
-.listTable th, .listTable td { padding: 10px 12px; border-bottom: 1px solid #ddd; text-align: left; color: #333; vertical-align: middle; }
-.listTable th { font-weight: bold; background-color: #e9ecef; } /* Fundo claro para cabeçalho */
-.listTable tbody tr { background-color: #fff; } /* Linhas ímpares brancas */
-.listTable tbody tr:nth-of-type(even) { background-color: #f8f9fa; } /* Efeito zebra */
-.listTable tbody tr:hover { background-color: #e2e6ea; }
+/* ================================================== */
+/* ========= INÍCIO DOS ESTILOS DE RESPONSIVIDADE ========= */
+/* ================================================== */
 
-.actionsCell { text-align: center; min-width: 180px; }
-.actionsCell div { display: flex; justify-content: center; gap: 8px; }
-.currencyCell { text-align: right; }
-.statusCell { min-width: 150px; }
+@media screen and (max-width: 768px) {
+  .listTable thead {
+    display: none; /* Esconde o cabeçalho em telas pequenas */
+  }
+  .listTable tr {
+    display: block;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background-color: #fff !important; /* Garante fundo branco para os 'cards' */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  .listTable td {
+    display: block;
+    text-align: right; /* Alinha o valor à direita */
+    padding-left: 50%; /* Dá espaço para o título aparecer na esquerda */
+    position: relative;
+    border-bottom: 1px dotted #eee;
+  }
+  .listTable td:last-child {
+    border-bottom: none;
+  }
+  .listTable td::before {
+    content: attr(data-label); /* Pega o texto do atributo 'data-label' */
+    position: absolute;
+    left: 15px;
+    width: calc(50% - 25px);
+    padding-right: 10px;
+    white-space: normal;
+    text-align: left; /* Alinha o título à esquerda */
+    font-weight: bold;
+    color: #495057;
+  }
+  .actionsCell {
+    text-align: center;
+    padding-left: 15px;
+  }
+  .actionsCell::before {
+    content: "Ações:";
+  }
+  .actionsCell div {
+    justify-content: flex-end; /* Alinha os botões à direita no mobile */
+  }
+}

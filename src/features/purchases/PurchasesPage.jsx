@@ -9,11 +9,27 @@ import PurchaseForm from './components/PurchaseForm';
 import PurchasesListTable from './components/PurchasesListTable';
 import PurchasePaymentModal from './components/PurchasePaymentModal';
 import ConfirmationModal from '../../components/ConfirmationModal';
+import Pagination from '../../components/Pagination';
 
-const initialFormData = { purchase_date: new Date().toISOString().split('T')[0], supplier_id: '', cost_center_id: '', product_id: '', product_name: '', unit_price: '', quantity: '', observations: '' };
+const initialFormData = {
+  purchase_date: new Date().toISOString().split('T')[0],
+  supplier_id: '',
+  cost_center_id: '',
+  product_id: '', 
+  product_name: '', 
+  unit_price: '',   
+  quantity: '',
+  observations: '',
+};
 
 function PurchasesPage() {
-  const { purchases, loadingPurchases, suppliers, productsList, costCentersList, loadingFormDataSources, refetchPurchases } = usePurchases();
+  const {
+    purchases, loadingPurchases, refetchPurchases,
+    suppliers, productsList, costCentersList, loadingFormDataSources,
+    currentPage, totalPages, totalItems, itemsPerPage, setCurrentPage,
+    filterText, setFilterText,
+    sortColumn, sortDirection, handleSort
+  } = usePurchases();
 
   const [formData, setFormData] = useState(initialFormData);
   const [isEditing, setIsEditing] = useState(false);
@@ -55,6 +71,10 @@ function PurchasesPage() {
   
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!formData.product_id || !formData.supplier_id || !formData.cost_center_id || !formData.unit_price || !formData.quantity) {
+      toast.error("Preencha todos os campos obrigatórios.");
+      return;
+    }
     setIsSubmitting(true);
     try {
       const dataToSubmit = { ...formData, total_amount: displayTotalAmount };
@@ -69,7 +89,7 @@ function PurchasesPage() {
       setIsSubmitting(false);
     }
   };
-
+  
   const handleEdit = (purchase) => {
     setIsEditing(true);
     setCurrentPurchaseId(purchase.purchase_id);
@@ -86,8 +106,8 @@ function PurchasesPage() {
     formRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
   
-  const handleDelete = (id, name) => {
-    setPurchaseToDelete({ id, name });
+  const handleDelete = (purchase) => {
+    setPurchaseToDelete(purchase);
     setShowDeleteModal(true);
   };
   
@@ -95,12 +115,10 @@ function PurchasesPage() {
     if (!purchaseToDelete) return;
     setIsDeleting(true);
     try {
-      // Deleta pagamentos associados primeiro
-      await supabase.from('transactions').delete().eq('reference_id', purchaseToDelete.id).eq('transaction_type', 'Compra');
-      // Deleta a compra
-      await supabase.from('purchases').delete().eq('purchase_id', purchaseToDelete.id);
+      await supabase.from('transactions').delete().eq('reference_id', purchaseToDelete.purchase_id).eq('transaction_type', 'Compra');
+      await supabase.from('purchases').delete().eq('purchase_id', purchaseToDelete.purchase_id);
       
-      toast.success(`Compra de "${purchaseToDelete.name}" excluída!`);
+      toast.success(`Compra de "${purchaseToDelete.product_name}" excluída!`);
       refetchPurchases();
     } catch (error) {
       toast.error(`Erro ao excluir: ${error.message}`);
@@ -115,11 +133,10 @@ function PurchasesPage() {
     setSelectedPurchase(purchase);
     setShowPaymentModal(true);
   };
-  
+
   return (
     <div className={styles.pageContainer}>
-      <h1>Registro de Compras</h1>
-
+      <h1 className={styles.pageTitle}>Registro de Compras</h1>
       <PurchaseForm
         formData={formData}
         handleInputChange={handleInputChange}
@@ -134,16 +151,42 @@ function PurchasesPage() {
         displayTotalAmount={displayTotalAmount}
         formRef={formRef}
       />
+      
+      <hr style={{margin: '40px 0'}}/>
 
-      {loadingPurchases ? <p>Carregando compras...</p> : (
-        <PurchasesListTable
-          purchases={purchases}
-          handleEdit={handleEdit}
-          handleDelete={handleDelete}
-          openPaymentModal={openPaymentModal}
+      <div className={styles.filterContainer}>
+        <input
+          type="text"
+          placeholder="Filtrar por produto..."
+          className={styles.input}
+          value={filterText}
+          onChange={(e) => {
+            setFilterText(e.target.value);
+            setCurrentPage(1);
+          }}
         />
-      )}
+      </div>
 
+      <PurchasesListTable
+        purchases={purchases}
+        isLoading={loadingPurchases}
+        handleEdit={handleEdit}
+        handleDelete={handleDelete}
+        openPaymentModal={openPaymentModal}
+        handleSort={handleSort}
+        sortColumn={sortColumn}
+        sortDirection={sortDirection}
+      />
+      
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={(page) => setCurrentPage(page)}
+        itemsPerPage={itemsPerPage}
+        totalItems={totalItems}
+        isLoading={loadingPurchases}
+      />
+      
       <PurchasePaymentModal
         isOpen={showPaymentModal}
         onClose={() => setShowPaymentModal(false)}
@@ -156,7 +199,7 @@ function PurchasesPage() {
         onClose={() => setShowDeleteModal(false)}
         onConfirm={confirmDelete}
         title="Confirmar Exclusão"
-        message={purchaseToDelete ? `Deseja realmente excluir a compra de ${purchaseToDelete.name}? Pagamentos associados também serão excluídos.` : ""}
+        message={purchaseToDelete ? `Deseja realmente excluir a compra de ${purchaseToDelete.product_name}?` : ""}
         isLoading={isDeleting}
       />
     </div>

@@ -1,4 +1,51 @@
 /* src/features/salespeople/components/SalespeoplePage.module.css */
+.pageContainer {
+  padding: 20px;
+  max-width: 900px;
+  margin: 0 auto;
+  font-family: Arial, sans-serif;
+}
+
+.formSection {
+  margin-bottom: 30px;
+  padding: 20px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  color: #333;
+}
+
+/* Adicionadas classes para o layout dos inputs */
+.formGrid {
+  display: grid;
+  /* Define que o grid terá sempre UMA única coluna */
+  grid-template-columns: 1fr;
+  gap: 15px; /* Espaçamento vertical entre os campos */
+  margin-bottom: 15px;
+}
+
+.input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+  color: #333; 
+  background-color: #fff;
+}
+
+.formRow {
+  display: flex;
+  justify-content: space-between; /* Coloca um item na esquerda e outro na direita */
+  align-items: center;
+  margin-top: 25px;
+}
+
+.formActions {
+  display: flex;
+  gap: 10px;
+}
+
 .table {
   width: 100%;
   border-collapse: collapse;

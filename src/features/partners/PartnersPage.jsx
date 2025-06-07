@@ -8,21 +8,25 @@ import { usePartners } from './usePartners';
 import PartnerForm from './components/PartnerForm';
 import PartnersListTable from './components/PartnersListTable';
 import ConfirmationModal from '../../components/ConfirmationModal';
+import Pagination from '../../components/Pagination';
 
 const initialFormData = { name: '', cpf_cnpj: '', email: '', phone: '', address: '', equity_percentage: '', entry_date: '', status_form: true, observations: '' };
 
 function PartnersPage() {
-  const { partners, loading, refetchPartners } = usePartners();
+  const {
+    partners, loading, refetchPartners,
+    currentPage, totalPages, setCurrentPage, itemsPerPage, totalItems,
+    filterText, setFilterText,
+    sortColumn, sortDirection, handleSort
+  } = usePartners();
 
   const [formData, setFormData] = useState(initialFormData);
   const [isEditing, setIsEditing] = useState(false);
   const [currentPartnerId, setCurrentPartnerId] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [partnerToDelete, setPartnerToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
-
   const formRef = useRef(null);
 
   const handleInputChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.type === 'checkbox' ? e.target.checked : e.target.value }));
@@ -49,11 +53,11 @@ function PartnersPage() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!formData.name.trim()) { toast.error('O Nome é obrigatório.'); return; }
-    // ...Sua lógica de validação de percentual...
+    
     setIsSubmitting(true);
     try {
-      const { status_form, ...dataToSubmit } = formData;
-      dataToSubmit.status = status_form ? 'Ativo' : 'Inativo';
+      const { status_form, ...dataFields } = formData;
+      const dataToSubmit = { ...dataFields, status: status_form ? 'Ativo' : 'Inativo' };
       
       const { error } = await supabase.from('partners').upsert({ partner_id: currentPartnerId, ...dataToSubmit });
       if (error) throw error;
@@ -96,7 +100,7 @@ function PartnersPage() {
 
   return (
     <div className={styles.pageContainer}>
-      <h1>Gerenciar Sócios</h1>
+      <h1 className={styles.pageTitle}>Gerenciar Sócios</h1>
       <PartnerForm
         formData={formData}
         handleInputChange={handleInputChange}
@@ -107,13 +111,40 @@ function PartnersPage() {
         resetForm={resetForm}
         formRef={formRef}
       />
-      {loading ? <p>Carregando...</p> : (
-        <PartnersListTable
-          partners={partners}
-          handleEdit={handleEdit}
-          handleDelete={handleDelete}
+      <hr style={{margin: '40px 0'}}/>
+
+      <div className={styles.filterContainer}>
+        <input
+          type="text"
+          placeholder="Filtrar por nome ou CPF/CNPJ..."
+          className={styles.input}
+          value={filterText}
+          onChange={(e) => {
+            setFilterText(e.target.value);
+            setCurrentPage(1);
+          }}
         />
-      )}
+      </div>
+
+      <PartnersListTable
+        partners={partners}
+        handleEdit={handleEdit}
+        handleDelete={handleDelete}
+        isLoading={loading}
+        handleSort={handleSort}
+        sortColumn={sortColumn}
+        sortDirection={sortDirection}
+      />
+
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={(page) => setCurrentPage(page)}
+        itemsPerPage={itemsPerPage}
+        totalItems={totalItems}
+        isLoading={loading}
+      />
+
       <ConfirmationModal
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}

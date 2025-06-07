@@ -8,31 +8,34 @@ import { useProducts } from './useProducts';
 import ProductForm from './components/ProductForm';
 import ProductsListTable from './components/ProductsListTable';
 import ConfirmationModal from '../../components/ConfirmationModal';
+import Pagination from '../../components/Pagination';
 
 const initialFormData = { name: '', description: '', unit_of_measure: '', purchase_price: '', sale_price: '', category: '', product_type: 'Ambos', is_active: true };
 
 function ProductsPage() {
-  const { products, loading, refetchProducts } = useProducts();
+  const { 
+    products, loading, refetchProducts,
+    currentPage, totalPages, setCurrentPage, itemsPerPage, totalItems,
+    filterText, setFilterText,
+    sortColumn, sortDirection, handleSort
+  } = useProducts();
 
   const [formData, setFormData] = useState(initialFormData);
   const [isEditing, setIsEditing] = useState(false);
   const [currentProductId, setCurrentProductId] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  
   const formRef = useRef(null);
-  
+
   const handleInputChange = (event) => {
     const { name, value } = event.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // Função dedicada para o ToggleSwitch
   const handleToggleChange = (e) => {
-    setFormData(prev => ({ ...prev, is_active: e.target.checked }));
+    setFormData(prev => ({...prev, is_active: e.target.checked }));
   };
 
   const resetForm = () => {
@@ -64,8 +67,10 @@ function ProductsPage() {
     setIsSubmitting(true);
     try {
       const { error } = await supabase.from('products').upsert({ product_id: currentProductId, ...formData });
-      if(error) throw error;
-
+      if(error) {
+        if (error.message.includes('unique constraint')) throw new Error('Já existe um produto com este nome.');
+        throw error;
+      }
       toast.success('Produto salvo com sucesso!');
       resetForm();
       refetchProducts();
@@ -85,10 +90,14 @@ function ProductsPage() {
     if (!itemToDelete) return;
     setIsDeleting(true);
     try {
-      // ... Lógica de verificação de uso
+      const { count: salesCount } = await supabase.from('sale_items').select('product_id', { count: 'exact', head: true }).eq('product_id', itemToDelete.product_id);
+      if (salesCount > 0) throw new Error('Produto em uso em Vendas.');
       
-      const { error } = await supabase.from('products').delete().eq('product_id', itemToDelete.product_id);
-      if (error) throw error;
+      const { count: purchasesCount } = await supabase.from('purchases').select('product_id', { count: 'exact', head: true }).eq('product_id', itemToDelete.product_id);
+      if (purchasesCount > 0) throw new Error('Produto em uso em Compras.');
+      
+      const { error: deleteError } = await supabase.from('products').delete().eq('product_id', itemToDelete.product_id);
+      if (deleteError) throw deleteError;
       
       toast.success(`"${itemToDelete.name}" excluído com sucesso!`);
       refetchProducts();
@@ -114,13 +123,41 @@ function ProductsPage() {
         resetForm={resetForm}
         formRef={formRef}
       />
-      {loading ? <p>Carregando...</p> : (
-        <ProductsListTable
-          products={products}
-          handleEdit={handleEdit}
-          handleDelete={handleDelete}
+      
+      <hr style={{margin: '40px 0'}} />
+
+      <div className={styles.filterContainer}>
+        <input
+          type="text"
+          placeholder="Filtrar por nome ou categoria..."
+          className={styles.input}
+          value={filterText}
+          onChange={(e) => {
+            setFilterText(e.target.value);
+            setCurrentPage(1);
+          }}
         />
-      )}
+      </div>
+
+      <ProductsListTable
+        products={products}
+        handleEdit={handleEdit}
+        handleDelete={handleDelete}
+        isLoading={loading}
+        handleSort={handleSort}
+        sortColumn={sortColumn}
+        sortDirection={sortDirection}
+      />
+      
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={(page) => setCurrentPage(page)}
+        itemsPerPage={itemsPerPage}
+        totalItems={totalItems}
+        isLoading={loading}
+      />
+        
       <ConfirmationModal
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}

@@ -10,14 +10,24 @@ import SaleItemsManager from './components/SaleItemsManager';
 import SalesListTable from './components/SalesListTable';
 import PaymentModal from './components/PaymentModal';
 import ConfirmationModal from '../../components/ConfirmationModal';
+import Pagination from '../../components/Pagination';
 
 const initialHeaderState = { sale_date: new Date().toISOString().split('T')[0], customer_id: '', salesperson_id: '', cost_center_id: '', commission_percentage: '', observations: '' };
 
 function SalesPage() {
   // O Hook busca os dados para a lista e para os dropdowns
-  const { sales, loadingSales, filterTextSales, setFilterTextSales, refetchSales, ...formDataSource } = useSales();
+  const {
+    sales, loadingSales, refetchSales,
+    customers, salespeople, productsList, costCentersList, loadingFormDataSources,
+    currentPage, totalPages, totalItems, itemsPerPage, setCurrentPage,
+    filterText, setFilterText,
+    sortColumn, sortDirection, handleSort
+  } = useSales();
 
-  // Estados para o formulário da venda ATUAL
+  // =================================================================
+  // ===== INÍCIO DA LÓGICA E ESTADOS RESTAURADOS ======================
+  // =================================================================
+
   const [headerData, setHeaderData] = useState(initialHeaderState);
   const [currentItems, setCurrentItems] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
@@ -25,17 +35,18 @@ function SalesPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const formRef = useRef(null);
 
-  // Estados para os modais
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedSaleForPayment, setSelectedSaleForPayment] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [saleToDelete, setSaleToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Calcula o total da venda atual
   const overallTotal = currentItems.reduce((sum, item) => sum + (item.item_total_amount || 0), 0);
+  const commissionValue = overallTotal * (parseFloat(String(headerData.commission_percentage).replace(',', '.')) / 100 || 0);
 
-  const handleHeaderChange = (e) => setHeaderData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  const handleHeaderChange = (e) => {
+    setHeaderData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
 
   const resetAllForms = () => {
     setHeaderData(initialHeaderState);
@@ -45,23 +56,28 @@ function SalesPage() {
     formRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
   
-  // LÓGICA DE SALVAR UMA VENDA (NOVA OU EDITADA)
   const handleSubmitSale = async (e) => {
     e.preventDefault();
-    if (currentItems.length === 0) { toast.error("Adicione pelo menos um item à venda."); return; }
+    if (currentItems.length === 0 && !isEditing) {
+      toast.error("Adicione pelo menos um item à venda.");
+      return;
+    }
     // ...outras validações...
     
     setIsSubmitting(true);
     try {
-      const saleHeaderDataToSubmit = { ...headerData, overall_total_amount: overallTotal };
+      const saleHeaderDataToSubmit = { 
+        ...headerData, 
+        overall_total_amount: overallTotal, 
+        commission_value: commissionValue,
+        commission_percentage: headerData.commission_percentage || null,
+      };
 
-      // Se estiver editando, só atualiza o cabeçalho.
       if (isEditing) {
         const { error } = await supabase.from('sales').update(saleHeaderDataToSubmit).eq('sale_id', currentSaleId);
         if (error) throw error;
-        toast.success(`Venda #${currentSaleId.substring(0,6)}... atualizada!`);
+        toast.success(`Venda atualizada com sucesso!`);
       } else {
-        // Se for nova, insere o cabeçalho e depois os itens.
         const { data: newSale, error: saleError } = await supabase.from('sales').insert([saleHeaderDataToSubmit]).select().single();
         if (saleError) throw saleError;
 
@@ -77,7 +93,7 @@ function SalesPage() {
         const { error: itemsError } = await supabase.from('sale_items').insert(itemsToInsert);
         if (itemsError) throw itemsError;
 
-        toast.success(`Venda #${newSale.sale_display_id} registrada com sucesso!`);
+        toast.success(`Venda #${newSale.sale_display_id} registrada!`);
       }
       
       resetAllForms();
@@ -88,8 +104,7 @@ function SalesPage() {
       setIsSubmitting(false);
     }
   };
-
-  // LÓGICA PARA PREPARAR A EDIÇÃO
+  
   const handleEditSale = async (saleToEdit) => {
     setIsEditing(true);
     setCurrentSaleId(saleToEdit.sale_id);
@@ -108,7 +123,6 @@ function SalesPage() {
     formRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // LÓGICA PARA DELETAR UMA VENDA
   const handleDeleteSale = (id, displayId) => {
     setSaleToDelete({ id, displayId });
     setShowDeleteModal(true);
@@ -118,10 +132,10 @@ function SalesPage() {
     if (!saleToDelete) return;
     setIsDeleting(true);
     try {
-      // É preciso deletar os pagamentos e itens antes de deletar a venda principal
       await supabase.from('transactions').delete().eq('reference_id', saleToDelete.id);
       await supabase.from('sale_items').delete().eq('sale_id', saleToDelete.id);
-      await supabase.from('sales').delete().eq('sale_id', saleToDelete.id);
+      const { error } = await supabase.from('sales').delete().eq('sale_id', saleToDelete.id);
+      if (error) throw error;
       
       toast.success(`Venda #${saleToDelete.displayId} e seus dados foram excluídos!`);
       refetchSales();
@@ -137,56 +151,93 @@ function SalesPage() {
     setSelectedSaleForPayment(sale);
     setShowPaymentModal(true);
   };
+  // ==============================================================
+  // ===== FIM DA LÓGICA E ESTADOS RESTAURADOS ====================
+  // ==============================================================
 
   return (
     <div className={styles.pageContainer}>
-      <h1>Registro de Vendas</h1>
+      <h1 className={styles.pageTitle}>Registro de Vendas</h1>
       <form onSubmit={handleSubmitSale} className={styles.formSection} ref={formRef}>
         <h2>{isEditing ? `Editando Venda #${currentSaleId?.substring(0,6)}...` : 'Nova Venda'}</h2>
-        <SaleHeaderForm formData={headerData} handleInputChange={handleHeaderChange} {...formDataSource} loading={formDataSource.loadingFormDataSources} />
-        <SaleItemsManager items={currentItems} setItems={setCurrentItems} productsList={formDataSource.productsList} loading={formDataSource.loadingFormDataSources} isEditing={isEditing} />
-        
+        <SaleHeaderForm
+          formData={headerData}
+          handleInputChange={handleHeaderChange}
+          customers={customers}
+          salespeople={salespeople}
+          costCentersList={costCentersList}
+          loading={loadingFormDataSources}
+        />
+        <SaleItemsManager
+          items={currentItems}
+          setItems={setCurrentItems}
+          productsList={productsList}
+          loading={loadingFormDataSources}
+          isEditing={isEditing}
+        />
         <div className={styles.summarySection}>
           <div>
             <label>TOTAL GERAL DA VENDA:</label>
             <input type="text" value={`R$ ${overallTotal.toFixed(2)}`} readOnly className={styles.readOnlyInput} />
           </div>
-          {/* Adicionar lógica de comissão se necessário */}
+          <div className={styles.formGroup}>
+            <label>% Comissão:</label>
+            <input type="number" name="commission_percentage" value={headerData.commission_percentage} onChange={handleHeaderChange} className={styles.input} />
+          </div>
         </div>
-
-        <div style={{display: 'flex', gap: '10px', marginTop: '20px'}}>
-            <button type="submit" disabled={isSubmitting || (currentItems.length === 0 && !isEditing)}>
-              {isSubmitting ? 'Salvando...' : (isEditing ? 'Salvar Alterações na Venda' : 'Finalizar e Registrar Venda')}
-            </button>
-            {isEditing && <button type="button" onClick={resetAllForms}>Cancelar Edição</button>}
+        <div style={{display: 'flex', gap: '10px', marginTop: '20px', justifyContent: 'flex-end'}}>
+          {isEditing && (<button type="button" onClick={resetAllForms}>Cancelar Edição</button>)}
+          <button type="submit" disabled={isSubmitting || (currentItems.length === 0 && !isEditing)}>
+            {isSubmitting ? 'Salvando...' : (isEditing ? 'Salvar Alterações' : 'Finalizar e Registrar Venda')}
+          </button>
         </div>
       </form>
       
       <hr style={{margin: '40px 0'}}/>
 
+      <div className={styles.filterContainer}>
+        <input
+          type="text"
+          placeholder="Filtrar por ID ou Observações..."
+          className={styles.input}
+          value={filterText}
+          onChange={(e) => {
+            setFilterText(e.target.value);
+            setCurrentPage(1);
+          }}
+        />
+      </div>
+
       <SalesListTable
         sales={sales}
         loading={loadingSales}
-        filterText={filterTextSales}
-        setFilterText={setFilterTextSales}
         handleEdit={handleEditSale}
         handleDelete={handleDeleteSale}
         openPaymentModal={openPaymentModal}
+        handleSort={handleSort}
+        sortColumn={sortColumn}
+        sortDirection={sortDirection}
       />
-
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={(page) => setCurrentPage(page)}
+        itemsPerPage={itemsPerPage}
+        totalItems={totalItems}
+        isLoading={loadingSales}
+      />
       <PaymentModal 
         isOpen={showPaymentModal}
         onClose={() => setShowPaymentModal(false)}
         saleData={selectedSaleForPayment}
         onSuccess={refetchSales}
       />
-      
       <ConfirmationModal 
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
         onConfirm={confirmDeleteSale}
         title="Confirmar Exclusão"
-        message={saleToDelete ? `Deseja realmente excluir a venda #${saleToDelete.displayId}? Esta ação não pode ser desfeita.` : ""}
+        message={saleToDelete ? `Deseja excluir a venda #${saleToDelete.displayId}?` : ""}
         isLoading={isDeleting}
       />
     </div>

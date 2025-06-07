@@ -1,0 +1,77 @@
+/* src/features/reports/css/ReportsPage.module.css */
+.pageContainer {
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  max-width: 1200px;
+  margin: 0 auto;
+  color: #333;
+}
+
+.reportSelector {
+  padding: 20px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  margin-bottom: 30px;
+}
+
+.formGrid {
+  display: flex;
+  gap: 20px;
+  align-items: flex-end;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.resultsContainer {
+  margin-top: 30px;
+}
+
+.summary {
+  display: flex;
+  gap: 40px;
+  background-color: #e9ecef;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-weight: bold;
+}
+
+/* ================================================= */
+/* ========= INÍCIO DA CORREÇÃO DA TABELA ========== */
+/* ================================================= */
+
+.reportTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.reportTable th,
+.reportTable td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #ddd;
+  text-align: left;
+  color: #333; /* Garante que o texto seja sempre escuro */
+}
+
+.reportTable th {
+  background-color: #f0f0f0; /* Fundo claro para o cabeçalho */
+  font-weight: bold;
+}
+
+/* Regra que espanta o fantasma de vez! */
+.reportTable tbody tr {
+  background-color: #fff; /* Garante que as linhas ímpares sejam brancas */
+}
+
+.reportTable tbody tr:nth-of-type(even) {
+  background-color: #f8f9fa; /* Efeito zebra para as linhas pares */
+}
+
+.reportTable tbody tr:hover {
+  background-color: #e9ecef; /* Efeito hover para todas as linhas */
+}

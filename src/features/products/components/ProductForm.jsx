@@ -1,14 +1,14 @@
 // src/features/products/components/ProductForm.jsx
 import React from 'react';
 import styles from '../css/ProductsPage.module.css';
-import ToggleSwitch from '../../../components/ToggleSwitch'; // Importa o novo componente
+import ToggleSwitch from '../../../components/ToggleSwitch';
 
 const productTypeOptions = ['Ambos', 'Compra', 'Venda'];
 
 const ProductForm = ({
   formData,
   handleInputChange,
-  handleToggleChange, // Recebe a nova função específica para o toggle
+  handleToggleChange,
   handleSubmit,
   isEditing,
   isSubmitting,
@@ -56,20 +56,30 @@ const ProductForm = ({
         </div>
       </div>
       
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '15px', marginBottom: '15px' }}>
-        <label>Status Ativo:</label>
-        <ToggleSwitch
-          checked={formData.is_active}
-          onChange={handleToggleChange}
-        />
+      {/* ============================================= */}
+      {/* ========= INÍCIO DA MUDANÇA DE LAYOUT ========= */}
+      {/* ============================================= */}
+      <div className={styles.formRow}>
+        {/* Item da Esquerda: Toggle */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <label>Status Ativo:</label>
+          <ToggleSwitch
+            checked={formData.is_active}
+            onChange={handleToggleChange}
+          />
+        </div>
+
+        {/* Item da Direita: Botões */}
+        <div className={styles.formActions}>
+          {isEditing && (<button type="button" onClick={resetForm}>Cancelar Edição</button>)}
+          <button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? 'Salvando...' : (isEditing ? 'Salvar Alterações' : 'Adicionar Produto/Serviço')}
+          </button>
+        </div>
       </div>
-      
-      <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-        <button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Salvando...' : (isEditing ? 'Salvar Alterações' : 'Adicionar Produto/Serviço')}
-        </button>
-        {isEditing && (<button type="button" onClick={resetForm}>Cancelar Edição</button>)}
-      </div>
+       {/* =========================================== */}
+      {/* ========= FIM DA MUDANÇA DE LAYOUT ======== */}
+      {/* =========================================== */}
     </form>
   );
 };

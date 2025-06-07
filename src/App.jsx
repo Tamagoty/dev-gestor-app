@@ -17,6 +17,7 @@ import PurchasesPage from './features/purchases/PurchasesPage';
 import PartnerWithdrawalsPage from './features/partnerWithdrawals/PartnerWithdrawalsPage';
 import ProductsPage from './features/products/ProductsPage';
 import CostCentersPage from './features/costCenters/CostCentersPage';
+import ReportsPage from './features/reports/ReportsPage';
 
 
 function App() {
@@ -137,6 +138,10 @@ function App() {
               <CostCentersPage />
             </ProtectedRoute>
           } 
+        />
+        <Route 
+          path="/relatorios"
+          element={ <ProtectedRoute session={session}><ReportsPage /></ProtectedRoute> } 
         />
         {/* Adicione mais rotas protegidas aqui dentro do Layout */}
       </Route>
