@@ -16,19 +16,15 @@ const saleHeaderBaseSelectString = `
 `;
 
 export function useSales() {
-  // Estados para a lista de vendas e controle
+  // Todos os estados permanecem os mesmos
   const [sales, setSales] = useState([]);
   const [loadingSales, setLoadingSales] = useState(true);
   const [listError, setListError] = useState(null);
-
-  // Estados para paginação, filtro e ordenação
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [filterText, setFilterText] = useState('');
   const [sortColumn, setSortColumn] = useState('sale_date');
   const [sortDirection, setSortDirection] = useState('desc');
-  
-  // Estados para os dados dos formulários (dropdowns)
   const [customers, setCustomers] = useState([]);
   const [salespeople, setSalespeople] = useState([]);
   const [productsList, setProductsList] = useState([]);
@@ -37,6 +33,11 @@ export function useSales() {
 
   const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
 
+  // =====================================================================
+  // ========= INÍCIO DA CORREÇÃO: LÓGICA DE BUSCA DE DADOS REFINADA =========
+  // =====================================================================
+
+  // 1. DEFINIMOS A FUNÇÃO 'fetchSales' NO ESCOPO PRINCIPAL COM 'useCallback'
   const fetchSales = useCallback(async () => {
     setLoadingSales(true);
     try {
@@ -51,9 +52,6 @@ export function useSales() {
 
       if (filterText.trim() !== '') {
         query = query.or(`sale_display_id.ilike.%${filterText.trim()}%,observations.ilike.%${filterText.trim()}%`);
-        // Nota: Filtrar por nome do cliente (tabela externa) diretamente no '.or' é complexo.
-        // Uma abordagem mais avançada com RPC (Remote Procedure Call) seria ideal, mas para este caso,
-        // o filtro funcionará bem para ID da venda e observações.
       }
 
       query = query
@@ -86,6 +84,37 @@ export function useSales() {
       setLoadingSales(false);
     }
   }, [currentPage, filterText, sortColumn, sortDirection]);
+
+
+  // 2. O useEffect AGORA APENAS CHAMA A FUNÇÃO 'fetchSales'
+  useEffect(() => {
+    fetchSales();
+  }, [fetchSales]);
+  
+
+  // A busca dos dados do formulário continua igual, já estava correta
+  useEffect(() => {
+    const fetchFormDataSources = async () => {
+      setLoadingFormDataSources(true);
+      try {
+        const [customersRes, salespeopleRes, productsRes, costCentersRes] = await Promise.all([
+          supabase.from('merchants').select('merchant_id, name').or('merchant_type.eq.Cliente,merchant_type.eq.Ambos').order('name'),
+          supabase.from('salespeople').select('salesperson_id, name').eq('is_active', true).order('name'),
+          supabase.from('products').select('product_id, name, sale_price').or('product_type.eq.Venda,product_type.eq.Ambos').eq('is_active', true).order('name'),
+          supabase.from('cost_centers').select('cost_center_id, name').eq('is_active', true).order('name'),
+        ]);
+        setCustomers(customersRes.data || []);
+        setSalespeople(salespeopleRes.data || []);
+        setProductsList(productsRes.data || []);
+        setCostCentersList(costCentersRes.data || []);
+      } catch (error) {
+        toast.error("Falha ao carregar dados para os formulários.");
+      } finally {
+        setLoadingFormDataSources(false);
+      }
+    };
+    fetchFormDataSources();
+  }, []);
   
   const handleSort = (columnName) => {
     if (sortColumn === columnName) {
@@ -97,18 +126,7 @@ export function useSales() {
     setCurrentPage(1);
   };
   
-  const fetchFormDataSources = useCallback(async () => {
-    // ... (lógica para buscar dados dos dropdowns permanece a mesma)
-  }, []);
-
-  useEffect(() => {
-    fetchSales();
-  }, [fetchSales]);
-
-  useEffect(() => {
-    fetchFormDataSources();
-  }, [fetchFormDataSources]);
-
+  // 3. O RETURN AGORA ENCONTRA A FUNÇÃO 'fetchSales' SEM PROBLEMAS
   return {
     sales, loadingSales, listError, refetchSales: fetchSales,
     customers, salespeople, productsList, costCentersList, loadingFormDataSources,
