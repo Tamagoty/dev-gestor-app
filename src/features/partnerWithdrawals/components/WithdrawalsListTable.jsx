@@ -1,41 +1,52 @@
 // src/features/partnerWithdrawals/components/WithdrawalsListTable.jsx
 import React from 'react';
 import styles from '../css/PartnerWithdrawalsPage.module.css';
+import IconButton from '../../../components/IconButton';
+import EditIcon from '../../../components/icons/EditIcon';
+import DeleteIcon from '../../../components/icons/DeleteIcon';
+import { SortAscIcon, SortDescIcon, SortNeutralIcon } from '../../../components/icons/SortIcons';
 
-const WithdrawalsListTable = ({ withdrawals, handleEdit, handleDelete }) => {
+const WithdrawalsListTable = ({
+  withdrawals,
+  isLoading,
+  handleEdit,
+  handleDelete,
+  handleSort,
+  sortColumn,
+  sortDirection
+}) => {
+  const renderSortIcon = (columnName) => {
+    if (sortColumn !== columnName) return <SortNeutralIcon />;
+    return sortDirection === 'asc' ? <SortAscIcon /> : <SortDescIcon />;
+  };
+
   return (
-    <div>
-      <h2>Retiradas Registradas</h2>
+    <div style={{ transition: 'opacity 0.3s ease', opacity: isLoading ? 0.5 : 1 }}>
+      <h2 className={styles.sectionTitle}>Retiradas Registradas</h2>
       <table className={styles.listTable}>
         <thead>
           <tr>
-            <th>Data</th>
-            <th>Sócio</th>
-            <th>Centro de Custo</th>
-            <th>Descrição</th>
-            <th>Método</th>
-            <th className={styles.currencyCell}>Valor (R$)</th>
+            <th onClick={() => handleSort('withdrawal_date')}>Data <span className={styles.sortIcon}>{renderSortIcon('withdrawal_date')}</span></th>
+            <th onClick={() => handleSort('partner.name')}>Sócio <span className={styles.sortIcon}>{renderSortIcon('partner.name')}</span></th>
+            <th onClick={() => handleSort('description')}>Descrição <span className={styles.sortIcon}>{renderSortIcon('description')}</span></th>
+            <th className={styles.currencyCell} onClick={() => handleSort('amount')}>Valor (R$) <span className={styles.sortIcon}>{renderSortIcon('amount')}</span></th>
             <th className={styles.actionsCell}>Ações</th>
           </tr>
         </thead>
         <tbody>
-          {withdrawals.length === 0 ? (
-            <tr>
-              <td colSpan="7" style={{ textAlign: 'center' }}>Nenhuma retirada registrada ainda.</td>
-            </tr>
+          {withdrawals.length === 0 && !isLoading ? (
+            <tr><td colSpan="5" style={{ textAlign: 'center' }}>Nenhuma retirada encontrada.</td></tr>
           ) : (
             withdrawals.map((wd) => (
               <tr key={wd.withdrawal_id}>
-                <td>{new Date(wd.withdrawal_date + 'T00:00:00Z').toLocaleDateString()}</td>
-                <td>{wd.partner?.name || 'N/A'}</td>
-                <td>{wd.cost_center?.name || 'N/A'}</td>
-                <td>{wd.description}</td>
-                <td>{wd.payment_method}</td>
-                <td className={styles.currencyCell}>R$ {parseFloat(wd.amount).toFixed(2)}</td>
-                <td className={styles.actionsCell}>
+                <td data-label="Data">{new Date(wd.withdrawal_date + 'T00:00:00Z').toLocaleDateString()}</td>
+                <td data-label="Sócio">{wd.partner?.name || 'N/A'}</td>
+                <td data-label="Descrição">{wd.description}</td>
+                <td data-label="Valor (R$)" className={styles.currencyCell}>{parseFloat(wd.amount).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                <td className={styles.actionsCell} data-label="Ações">
                   <div>
-                    <button onClick={() => handleEdit(wd)}>Editar</button>
-                    <button onClick={() => handleDelete(wd)}>Excluir</button>
+                    <IconButton variant="warning" onClick={() => handleEdit(wd)} title="Editar"><EditIcon /></IconButton>
+                    <IconButton variant="danger" onClick={() => handleDelete(wd)} title="Excluir"><DeleteIcon /></IconButton>
                   </div>
                 </td>
               </tr>

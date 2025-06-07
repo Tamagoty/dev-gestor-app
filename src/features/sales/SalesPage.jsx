@@ -11,6 +11,7 @@ import SalesListTable from './components/SalesListTable';
 import PaymentModal from './components/PaymentModal';
 import ConfirmationModal from '../../components/ConfirmationModal';
 import Pagination from '../../components/Pagination';
+import FormActions from '../../components/FormActions';
 
 const initialHeaderState = { sale_date: new Date().toISOString().split('T')[0], customer_id: '', salesperson_id: '', cost_center_id: '', commission_percentage: '', observations: '' };
 
@@ -185,12 +186,11 @@ function SalesPage() {
             <input type="number" name="commission_percentage" value={headerData.commission_percentage} onChange={handleHeaderChange} className={styles.input} />
           </div>
         </div>
-        <div style={{display: 'flex', gap: '10px', marginTop: '20px', justifyContent: 'flex-end'}}>
-          {isEditing && (<button type="button" onClick={resetAllForms}>Cancelar Edição</button>)}
-          <button type="submit" disabled={isSubmitting || (currentItems.length === 0 && !isEditing)}>
-            {isSubmitting ? 'Salvando...' : (isEditing ? 'Salvar Alterações' : 'Finalizar e Registrar Venda')}
-          </button>
-        </div>
+         <FormActions
+          isEditing={isEditing}
+          isSubmitting={isSubmitting}
+          onCancel={resetAllForms}
+        />
       </form>
       
       <hr style={{margin: '40px 0'}}/>

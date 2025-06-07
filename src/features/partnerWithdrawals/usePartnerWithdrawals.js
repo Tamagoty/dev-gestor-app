@@ -3,39 +3,59 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import toast from 'react-hot-toast';
 
+const ITEMS_PER_PAGE = 15;
+
 export function usePartnerWithdrawals() {
-  // Estados para a lista de retiradas
   const [withdrawals, setWithdrawals] = useState([]);
   const [loadingWithdrawals, setLoadingWithdrawals] = useState(true);
   const [listError, setListError] = useState(null);
+  
+  // Estados para Paginação, Filtro e Ordenação
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [filterText, setFilterText] = useState('');
+  const [sortColumn, setSortColumn] = useState('withdrawal_date');
+  const [sortDirection, setSortDirection] = useState('desc');
 
-  // Estados para os dados dos formulários (dropdowns)
+  // Estados para os dropdowns do formulário
   const [partners, setPartners] = useState([]);
   const [costCentersList, setCostCentersList] = useState([]);
   const [loadingFormSources, setLoadingFormSources] = useState(true);
+
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
 
   const fetchWithdrawals = useCallback(async () => {
     setLoadingWithdrawals(true);
     try {
       setListError(null);
-      const { data, error } = await supabase
+      const from = (currentPage - 1) * ITEMS_PER_PAGE;
+      const to = from + ITEMS_PER_PAGE - 1;
+
+      let query = supabase
         .from('partner_withdrawals')
-        .select(`*, partner:partners(name), cost_center:cost_centers(name)`)
-        .order('withdrawal_date', { ascending: false })
-        .order('created_at', { ascending: false });
+        .select(`*, partner:partners(name), cost_center:cost_centers(name)`, { count: 'exact' });
+
+      if (filterText.trim() !== '') {
+        query = query.ilike('description', `%${filterText.trim()}%`);
+      }
+
+      query = query
+        .order(sortColumn, { ascending: sortDirection === 'asc' })
+        .range(from, to);
       
+      const { data, error, count } = await query;
       if (error) throw error;
+
       setWithdrawals(data || []);
+      setTotalItems(count || 0);
     } catch (err) {
-      const errorMessage = 'Falha ao carregar retiradas.';
-      console.error(errorMessage, err.message);
+      console.error('Erro ao buscar retiradas:', err.message);
       setListError(err.message);
-      toast.error(errorMessage);
     } finally {
       setLoadingWithdrawals(false);
     }
-  }, []);
-
+  }, [currentPage, filterText, sortColumn, sortDirection]);
+  
   const fetchFormDataSources = useCallback(async () => {
     setLoadingFormSources(true);
     try {
@@ -43,15 +63,10 @@ export function usePartnerWithdrawals() {
         supabase.from('partners').select('partner_id, name').eq('status', 'Ativo').order('name'),
         supabase.from('cost_centers').select('cost_center_id, name').eq('is_active', true).order('name'),
       ]);
-
-      if (partnersRes.error) throw partnersRes.error;
-      if (costCentersRes.error) throw costCentersRes.error;
-
       setPartners(partnersRes.data || []);
       setCostCentersList(costCentersRes.data || []);
     } catch (error) {
       toast.error("Falha ao carregar sócios ou centros de custo.");
-      console.error("Erro carregando fontes de dados para retiradas:", error);
     } finally {
       setLoadingFormSources(false);
     }
@@ -59,8 +74,21 @@ export function usePartnerWithdrawals() {
 
   useEffect(() => {
     fetchWithdrawals();
+  }, [fetchWithdrawals]);
+
+  useEffect(() => {
     fetchFormDataSources();
-  }, [fetchWithdrawals, fetchFormDataSources]);
+  }, [fetchFormDataSources]);
+
+  const handleSort = (columnName) => {
+    if (sortColumn === columnName) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(columnName);
+      setSortDirection('asc');
+    }
+    setCurrentPage(1);
+  };
 
   return {
     withdrawals,
@@ -70,5 +98,15 @@ export function usePartnerWithdrawals() {
     costCentersList,
     loadingFormSources,
     refetchWithdrawals: fetchWithdrawals,
+    currentPage,
+    totalPages,
+    totalItems,
+    itemsPerPage: ITEMS_PER_PAGE,
+    setCurrentPage,
+    filterText,
+    setFilterText,
+    sortColumn,
+    sortDirection,
+    handleSort,
   };
 }

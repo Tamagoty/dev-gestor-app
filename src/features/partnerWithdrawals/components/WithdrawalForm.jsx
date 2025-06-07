@@ -1,6 +1,7 @@
 // src/features/partnerWithdrawals/components/WithdrawalForm.jsx
 import React from 'react';
 import styles from '../css/PartnerWithdrawalsPage.module.css';
+import FormActions from '../../../components/FormActions';
 
 const paymentMethods = ["Dinheiro", "PIX", "Transferência Bancária", "Cheque"];
 
@@ -53,7 +54,7 @@ const WithdrawalForm = ({
           </select>
         </div>
       </div>
-      
+
       <div>
         <label>Descrição/Motivo: *</label>
         <input type="text" name="description" value={formData.description} onChange={handleInputChange} required className={styles.input} placeholder="Ex: Pró-labore, Adiantamento" />
@@ -63,13 +64,12 @@ const WithdrawalForm = ({
         <label>Observações Adicionais:</label>
         <textarea name="observations" value={formData.observations} onChange={handleInputChange} rows="3" className={styles.textarea} />
       </div>
-      
-      <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-        <button type="submit" disabled={isSubmitting || loading}>
-          {isSubmitting ? 'Salvando...' : (isEditing ? 'Salvar Alterações' : 'Registrar Retirada')}
-        </button>
-        {isEditing && <button type="button" onClick={resetForm}>Cancelar Edição</button>}
-      </div>
+
+      <FormActions
+        isEditing={isEditing}
+        isSubmitting={isSubmitting}
+        onCancel={resetForm}
+      />
     </form>
   );
 };

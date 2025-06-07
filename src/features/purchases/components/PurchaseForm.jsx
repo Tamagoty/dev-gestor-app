@@ -1,6 +1,7 @@
 // src/features/purchases/components/PurchaseForm.jsx
 import React from 'react';
 import styles from '../css/PurchasesPage.module.css';
+import FormActions from '../../../components/FormActions';
 
 const PurchaseForm = ({
   formData,
@@ -19,7 +20,7 @@ const PurchaseForm = ({
   return (
     <form onSubmit={handleSubmit} ref={formRef} className={styles.formSection}>
       <h2>{isEditing ? 'Editar Compra' : 'Nova Compra'}</h2>
-      
+
       <div className={styles.formGrid}>
         <div>
           <label>Data Compra: *</label>
@@ -69,13 +70,12 @@ const PurchaseForm = ({
           <input type="text" value={`R$ ${displayTotalAmount.toFixed(2)}`} readOnly className={styles.readOnlyInput} />
         </div>
       </div>
-      
-      <div style={{display: 'flex', gap: '10px', marginTop: '20px'}}>
-        <button type="submit" disabled={isSubmitting || loading}>
-          {isSubmitting ? 'Salvando...' : (isEditing ? 'Salvar Alterações' : 'Registrar Compra')}
-        </button>
-        {isEditing && <button type="button" onClick={resetForm}>Cancelar Edição</button>}
-      </div>
+
+      <FormActions
+        isEditing={isEditing}
+        isSubmitting={isSubmitting}
+        onCancel={resetForm}
+      />
     </form>
   );
 };

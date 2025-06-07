@@ -29,8 +29,14 @@ function PartnersPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const formRef = useRef(null);
 
-  const handleInputChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.type === 'checkbox' ? e.target.checked : e.target.value }));
+  const handleInputChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   const handleMaskedValueChange = (value, name) => setFormData(prev => ({ ...prev, [name]: value }));
+  
+  // Função específica para o Toggle
+  const handleToggleChange = (e) => {
+    setFormData(prev => ({ ...prev, status_form: e.target.checked }));
+  };
+
   const resetForm = () => { setFormData(initialFormData); setIsEditing(false); setCurrentPartnerId(null); };
 
   const handleEdit = (partner) => {
@@ -98,13 +104,14 @@ function PartnersPage() {
     }
   };
 
-  return (
+ return (
     <div className={styles.pageContainer}>
       <h1 className={styles.pageTitle}>Gerenciar Sócios</h1>
       <PartnerForm
         formData={formData}
         handleInputChange={handleInputChange}
         handleMaskedValueChange={handleMaskedValueChange}
+        handleToggleChange={handleToggleChange}
         handleSubmit={handleSubmit}
         isEditing={isEditing}
         isSubmitting={isSubmitting}
@@ -126,7 +133,7 @@ function PartnersPage() {
         />
       </div>
 
-      <PartnersListTable
+         <PartnersListTable
         partners={partners}
         handleEdit={handleEdit}
         handleDelete={handleDelete}

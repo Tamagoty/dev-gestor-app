@@ -1,16 +1,17 @@
 // src/features/costCenters/components/CostCenterForm.jsx
 import React from 'react';
 import styles from '../css/CostCentersPage.module.css';
-import ToggleSwitch from '../../../components/ToggleSwitch'; // 1. IMPORTA O COMPONENTE
+import ToggleSwitch from '../../../components/ToggleSwitch';
+import FormActions from '../../../components/FormActions'; // 1. IMPORTAMOS NOSSO NOVO COMPONENTE
 
 const CostCenterForm = ({
   formData,
   handleInputChange,
-  handleToggleChange, // 2. RECEBE A NOVA FUNÇÃO
+  handleToggleChange,
   handleSubmit,
   isEditing,
   isSubmitting,
-  resetForm,
+  resetForm, // A função para cancelar, que será passada para o onCancel
   formRef,
 }) => {
   return (
@@ -39,21 +40,20 @@ const CostCenterForm = ({
         </div>
       </div>
       
-      {/* 3. SUBSTITUI O CHECKBOX ANTIGO PELO TOGGLE SWITCH */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '15px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
         <label>Status Ativo:</label>
         <ToggleSwitch
           checked={formData.is_active}
           onChange={handleToggleChange}
         />
       </div>
-      
-      <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-        <button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Salvando...' : (isEditing ? 'Salvar Alterações' : 'Adicionar Centro de Custo')}
-        </button>
-        {isEditing && <button type="button" onClick={resetForm}>Cancelar Edição</button>}
-      </div>
+
+      {/* 2. A DIV ANTIGA DOS BOTÕES É REMOVIDA E SUBSTITUÍDA PELO NOSSO COMPONENTE */}
+      <FormActions
+        isEditing={isEditing}
+        isSubmitting={isSubmitting}
+        onCancel={resetForm}
+      />
     </form>
   );
 };

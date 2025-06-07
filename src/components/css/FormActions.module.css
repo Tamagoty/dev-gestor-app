@@ -1,0 +1,54 @@
+/* src/components/css/FormActions.module.css */
+.actionsContainer {
+  display: flex;
+  justify-content: flex-end; /* Alinha os botões à direita */
+  gap: 10px;
+  margin-top: 25px;
+  border-top: 1px solid #e0e0e0;
+  padding-top: 20px;
+}
+
+/* Estilo base para todos os botões */
+.button {
+  padding: 10px 20px;
+  border-radius: 4px;
+  border: none;
+  font-weight: bold;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.button:disabled {
+  background-color: #e9ecef;
+  color: #6c757d;
+  cursor: not-allowed;
+}
+
+/* ============================================= */
+/* ========= CLASSES DE COR ADICIONADAS ========== */
+/* ============================================= */
+
+.submit {
+  background-color: #28a745; /* Verde para "Adicionar" */
+  color: white;
+}
+.submit:hover:not(:disabled) {
+  background-color: #218838;
+}
+
+.submitEditing {
+  background-color: #ffc107; /* Amarelo para "Salvar Alterações" */
+  color: #212529; /* Texto escuro para contraste */
+}
+.submitEditing:hover:not(:disabled) {
+  background-color: #e0a800;
+}
+
+.cancel {
+  background-color: #6c757d; /* Cinza para "Cancelar" */
+  color: white;
+}
+.cancel:hover:not(:disabled) {
+  background-color: #5a6268;
+}

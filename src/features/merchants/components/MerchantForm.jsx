@@ -2,6 +2,7 @@
 import React from 'react';
 import { IMaskInput } from 'react-imask';
 import styles from '../css/MerchantsPage.module.css';
+import FormActions from '../../../components/FormActions';
 
 const brazilianStates = [
   { sigla: '', nome: 'Selecione UF...' }, { sigla: 'AC', nome: 'Acre' },
@@ -34,29 +35,29 @@ const MerchantForm = ({
   return (
     <form onSubmit={handleSubmit} ref={formRef} className={styles.formSection}>
       <h2>{isEditing ? 'Editar Cliente/Fornecedor' : 'Adicionar Novo'}</h2>
-      
+
       <div style={{ display: 'flex', gap: '20px', marginBottom: '15px' }}>
         <div style={{ flex: 1 }}>
           <label>Nome/Razão Social: *</label>
-          <input type="text" name="name" value={formData.name} onChange={handleInputChange} required className={styles.input}/>
+          <input type="text" name="name" value={formData.name} onChange={handleInputChange} required className={styles.input} />
         </div>
         <div style={{ flex: 1 }}>
           <label>Apelido/Nome Fantasia:</label>
-          <input type="text" name="nickname" value={formData.nickname} onChange={handleInputChange} className={styles.input}/>
+          <input type="text" name="nickname" value={formData.nickname} onChange={handleInputChange} className={styles.input} />
         </div>
       </div>
-      
+
       <div style={{ display: 'flex', gap: '20px', marginBottom: '15px' }}>
         <div style={{ flex: 1 }}>
           <label>Telefone:</label>
-          <IMaskInput mask="(00) 0.0000-0000" value={formData.phone} onAccept={(value) => handleMaskedValueChange(value, 'phone')} placeholder="(##) #.####-####" type="tel" className={styles.input}/>
+          <IMaskInput mask="(00) 0.0000-0000" value={formData.phone} onAccept={(value) => handleMaskedValueChange(value, 'phone')} placeholder="(##) #.####-####" type="tel" className={styles.input} />
         </div>
         <div style={{ flex: 1 }}>
           <label>Email:</label>
-          <input type="email" name="email" value={formData.email} onChange={handleInputChange} className={styles.input}/>
+          <input type="email" name="email" value={formData.email} onChange={handleInputChange} className={styles.input} />
         </div>
       </div>
-      
+
       <div style={{ display: 'flex', gap: '20px', marginBottom: '15px', alignItems: 'center' }}>
         <div style={{ flex: 1 }}>
           <label>Tipo: *</label>
@@ -77,15 +78,14 @@ const MerchantForm = ({
           </span>
         </div>
       </div>
-      
+
       {/* ... (Restante do formulário com as classes corrigidas) ... */}
-      
-      <div style={{display: 'flex', gap: '10px', marginTop: '10px'}}>
-        <button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? (isEditing ? 'Salvando...' : 'Adicionando...') : (isEditing ? 'Salvar' : 'Adicionar')}
-        </button>
-        {isEditing && (<button type="button" onClick={resetForm}>Cancelar</button>)}
-      </div>
+
+      <FormActions
+        isEditing={isEditing}
+        isSubmitting={isSubmitting}
+        onCancel={resetForm}
+      />
     </form>
   );
 };

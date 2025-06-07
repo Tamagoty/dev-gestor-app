@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabaseClient';
 import toast from 'react-hot-toast';
 import styles from './css/ReportsPage.module.css';
 import SalesReportTable from './components/SalesReportTable';
+import PrimaryButton from '../../components/PrimaryButton';
 
 function ReportsPage() {
   const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10));
@@ -54,9 +55,9 @@ function ReportsPage() {
             <label htmlFor="end-date">Data de Fim:</label>
             <input type="date" id="end-date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
           </div>
-          <button onClick={handleGenerateReport} disabled={loading}>
+          <PrimaryButton onClick={handleGenerateReport} disabled={loading}>
             {loading ? 'Gerando...' : 'Gerar Relatório'}
-          </button>
+          </PrimaryButton>
         </div>
       </div>
 

@@ -2,6 +2,7 @@
 import React from 'react';
 import styles from '../css/ProductsPage.module.css';
 import ToggleSwitch from '../../../components/ToggleSwitch';
+import FormActions from '../../../components/FormActions';
 
 const productTypeOptions = ['Ambos', 'Compra', 'Venda'];
 
@@ -12,7 +13,7 @@ const ProductForm = ({
   handleSubmit,
   isEditing,
   isSubmitting,
-  resetForm,
+  resetForm, // O nome da prop para cancelar é 'resetForm' neste componente
   formRef
 }) => {
   return (
@@ -70,12 +71,11 @@ const ProductForm = ({
         </div>
 
         {/* Item da Direita: Botões */}
-        <div className={styles.formActions}>
-          {isEditing && (<button type="button" onClick={resetForm}>Cancelar Edição</button>)}
-          <button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Salvando...' : (isEditing ? 'Salvar Alterações' : 'Adicionar Produto/Serviço')}
-          </button>
-        </div>
+          <FormActions
+        isEditing={isEditing}
+        isSubmitting={isSubmitting}
+        onCancel={resetForm} 
+      />
       </div>
        {/* =========================================== */}
       {/* ========= FIM DA MUDANÇA DE LAYOUT ======== */}
