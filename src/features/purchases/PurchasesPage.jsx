@@ -15,11 +15,8 @@ const initialFormData = {
   purchase_date: new Date().toISOString().split('T')[0],
   supplier_id: '',
   cost_center_id: '',
-  product_id: '', 
-  product_name: '', 
-  unit_price: '',   
-  quantity: '',
   observations: '',
+  items: [], // Array para guardar os itens da compra
 };
 
 function PurchasesPage() {
@@ -35,7 +32,6 @@ function PurchasesPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [currentPurchaseId, setCurrentPurchaseId] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [displayTotalAmount, setDisplayTotalAmount] = useState(0);
 
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedPurchase, setSelectedPurchase] = useState(null);
@@ -44,23 +40,16 @@ function PurchasesPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   
   const formRef = useRef(null);
-
-  useEffect(() => {
-    const price = parseFloat(String(formData.unit_price).replace(',', '.'));
-    const qty = parseFloat(String(formData.quantity).replace(',', '.'));
-    setDisplayTotalAmount((!isNaN(price) && !isNaN(qty) && qty > 0) ? price * qty : 0);
-  }, [formData.unit_price, formData.quantity]);
+  const purchaseTotalAmount = formData.items.reduce((total, item) => {
+    return total + (Number(item.quantity) * Number(item.unit_price));
+  }, 0);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    let newFormData = { ...formData, [name]: value };
-    if (name === 'product_id') {
-      const product = productsList.find(p => p.product_id === value);
-      if (product) {
-        newFormData = { ...newFormData, product_name: product.name, unit_price: product.purchase_price ?? '' };
-      }
-    }
-    setFormData(newFormData);
+    setFormData(prevData => ({
+      ...prevData,
+      [name]: value // Atualiza campos como purchase_date, supplier_id, etc.
+    }));
   };
 
   const resetForm = () => {
@@ -148,7 +137,7 @@ function PurchasesPage() {
         productsList={productsList}
         costCentersList={costCentersList}
         loading={loadingFormDataSources}
-        displayTotalAmount={displayTotalAmount}
+        purchaseTotalAmount={purchaseTotalAmount}
         formRef={formRef}
       />
       
