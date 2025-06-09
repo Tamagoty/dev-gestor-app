@@ -37,7 +37,7 @@ function App() {
         setSession(currentSession);
         // Se o usuário deslogar ou a sessão expirar e ele estava em uma rota protegida,
         // pode ser útil redirecioná-lo, embora o ProtectedRoute já vá fazer isso.
-        // Se _event === 'SIGNED_OUT' && !currentSession) navigate('/auth');
+        // Se _event === 'SIGNED_OUT' && !currentSession) navigate('/auth') a;
       }
     );
     return () => subscription?.unsubscribe();
