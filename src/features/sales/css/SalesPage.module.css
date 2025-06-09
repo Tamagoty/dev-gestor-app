@@ -78,11 +78,13 @@
 }
 .summarySection {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  /* Isso fará com que o layout se adapte para 2 ou 3 colunas automaticamente */
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 15px;
   margin-top: 20px;
   border-top: 1px solid #ccc;
   padding-top: 15px;
+  align-items: end; /* Alinha os itens na parte de baixo */
 }
 .filterContainer {
   margin-bottom: 20px;

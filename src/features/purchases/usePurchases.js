@@ -1,4 +1,4 @@
-// src/features/purchases/usePurchases.js
+// src/features/purchases/usePurchases.js (VERSÃO FINAL COM FILTROS AVANÇADOS)
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import toast from 'react-hot-toast';
@@ -16,6 +16,11 @@ export function usePurchases() {
   const [sortColumn, setSortColumn] = useState('purchase_date');
   const [sortDirection, setSortDirection] = useState('desc');
 
+  // =================================================================
+  // 1. ADICIONADO NOVO ESTADO PARA O FILTRO DE SALDO EM ABERTO
+  // =================================================================
+  const [showOnlyOpen, setShowOnlyOpen] = useState(false);
+
   const [suppliers, setSuppliers] = useState([]);
   const [productsList, setProductsList] = useState([]);
   const [costCentersList, setCostCentersList] = useState([]);
@@ -31,11 +36,24 @@ export function usePurchases() {
       const to = from + ITEMS_PER_PAGE - 1;
 
       let query = supabase
-        .from('purchases')
-        .select(`*, supplier:merchants(name), product:products(name), cost_center:cost_centers(name)`, { count: 'exact' });
+        .from('purchases_with_status_view')
+        .select('*', { count: 'exact' });
 
+      // =================================================================
+      // 2. LÓGICA DO FILTRO DE TEXTO ATUALIZADA
+      // =================================================================
       if (filterText.trim() !== '') {
-        query = query.or(`product_name.ilike.%${filterText.trim()}%`);
+        // Agora busca em ambas as colunas: nome do fornecedor E nome do centro de custo
+        const filterQuery = `supplier_name.ilike.%${filterText.trim()}%,cost_center_name.ilike.%${filterText.trim()}%`;
+        query = query.or(filterQuery);
+      }
+
+      // =================================================================
+      // 3. LÓGICA DO NOVO FILTRO DE SALDO EM ABERTO ADICIONADA
+      // =================================================================
+      if (showOnlyOpen) {
+        // balance é a coluna da nossa VIEW que calcula (total - pago)
+        query = query.gt('balance', 0); // gt = Greater Than (maior que)
       }
       
       query = query
@@ -44,28 +62,19 @@ export function usePurchases() {
 
       const { data: purchasesData, error: purchasesError, count } = await query;
       if (purchasesError) throw purchasesError;
+      
+      setPurchases(purchasesData || []);
+      setTotalItems(count || 0);
 
-      if (purchasesData) {
-        const purchasesWithPaymentInfo = await Promise.all(
-          purchasesData.map(async (purchase) => {
-            const { data: payments } = await supabase.from('transactions').select('amount').eq('reference_id', purchase.purchase_id).eq('transaction_type', 'Compra');
-            const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
-            return { ...purchase, total_paid: totalPaid };
-          })
-        );
-        setPurchases(purchasesWithPaymentInfo);
-        setTotalItems(count || 0);
-      } else {
-        setPurchases([]);
-        setTotalItems(0);
-      }
     } catch (err) {
       console.error('Erro ao buscar compras:', err.message);
       setListError(err.message);
+      toast.error(`Falha ao carregar compras: ${err.message}`);
     } finally {
       setLoadingPurchases(false);
     }
-  }, [currentPage, filterText, sortColumn, sortDirection]);
+  // 4. ADICIONADO `showOnlyOpen` ÀS DEPENDÊNCIAS DO CALLBACK
+  }, [currentPage, filterText, sortColumn, sortDirection, showOnlyOpen]);
 
   const handleSort = (columnName) => {
     if (sortColumn === columnName) {
@@ -78,6 +87,7 @@ export function usePurchases() {
   };
   
   const fetchFormDataSources = useCallback(async () => {
+    // ... (esta função não muda)
     setLoadingFormDataSources(true);
     try {
        const [suppliersRes, productsRes, costCentersRes] = await Promise.all([
@@ -103,11 +113,15 @@ export function usePurchases() {
     fetchFormDataSources();
   }, [fetchFormDataSources]);
 
+  // =================================================================
+  // 5. RETORNANDO O NOVO ESTADO E O SETTER DO HOOK
+  // =================================================================
   return {
     purchases, loadingPurchases, listError, refetchPurchases: fetchPurchases,
     suppliers, productsList, costCentersList, loadingFormDataSources,
     currentPage, totalPages, totalItems, itemsPerPage: ITEMS_PER_PAGE, setCurrentPage,
     filterText, setFilterText,
-    sortColumn, sortDirection, handleSort
+    sortColumn, sortDirection, handleSort,
+    showOnlyOpen, setShowOnlyOpen, // Exportando para a página usar
   };
 }

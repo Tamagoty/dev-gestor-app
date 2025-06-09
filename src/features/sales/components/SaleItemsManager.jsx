@@ -1,10 +1,11 @@
-// src/features/sales/components/SaleItemsManager.jsx
+// src/features/sales/components/SaleItemsManager.jsx (VERSÃO CORRIGIDA)
 import React, { useState, useEffect, useRef } from 'react';
 import styles from '../css/SalesPage.module.css';
+import toast from 'react-hot-toast'; // Adicionado para melhor feedback
 
 const initialItemState = { product_id: '', product_name: '', unit_price: '', quantity: '1', item_total_amount: 0 };
 
-const SaleItemsManager = ({ items, setItems, productsList, loading, isEditing }) => {
+const SaleItemsManager = ({ items, setItems, productsList, loading }) => {
   const [currentItem, setCurrentItem] = useState(initialItemState);
   const productSelectRef = useRef(null);
 
@@ -31,7 +32,7 @@ const SaleItemsManager = ({ items, setItems, productsList, loading, isEditing })
 
   const handleAddItem = () => {
     if (!currentItem.product_id || !currentItem.quantity || currentItem.unit_price === '') {
-      alert('Preencha todos os campos do item.');
+      toast.error('Preencha todos os campos do item antes de adicionar.');
       return;
     }
     const newItem = {
@@ -50,32 +51,13 @@ const SaleItemsManager = ({ items, setItems, productsList, loading, isEditing })
     setItems(prevItems => prevItems.filter((_, index) => index !== indexToRemove));
   };
   
-  if (isEditing) {
-    return (
-      <div className={styles.itemsManager}>
-        <h4>Itens da Venda (Modo de Edição)</h4>
-        <p>Para alterar itens, cancele a edição e crie uma nova venda. A edição de itens em uma venda existente não é permitida para manter a integridade dos dados.</p>
-        <table className={styles.itemsTable}>
-          <thead><tr><th>Produto</th><th>Qtd</th><th>Preço Unit.</th><th>Subtotal</th></tr></thead>
-          <tbody>
-            {items.map((item, index) => (
-              <tr key={index}>
-                <td>{item.product_name_at_sale}</td>
-                <td style={{textAlign: 'right'}}>{item.quantity}</td>
-                <td style={{textAlign: 'right'}}>R$ {parseFloat(item.unit_price_at_sale).toFixed(2)}</td>
-                <td style={{textAlign: 'right'}}>R$ {parseFloat(item.item_total_amount).toFixed(2)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    );
-  }
-
+  // O bloco 'if (isEditing)' foi removido. O componente agora sempre renderiza a UI interativa.
   return (
     <div className={styles.itemsManager}>
-      <h4>Adicionar Item à Venda</h4>
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 0.8fr 0.8fr 1fr auto', gap: '10px', alignItems: 'flex-end' }}>
+      <h4>Itens da Venda</h4>
+      
+      {/* Formulário para adicionar um novo item */}
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 0.8fr 0.8fr 1fr auto', gap: '10px', alignItems: 'flex-end', marginBottom: '20px' }}>
         <div>
           <label>Produto/Serviço: *</label>
           <select name="product_id" value={currentItem.product_id} onChange={handleItemInputChange} className={styles.select} disabled={loading} ref={productSelectRef}>
@@ -93,22 +75,23 @@ const SaleItemsManager = ({ items, setItems, productsList, loading, isEditing })
         </div>
         <div>
           <label>Subtotal Item:</label>
-          <input type="text" value={`R$ ${currentItem.item_total_amount.toFixed(2)}`} readOnly className={styles.readOnlyInput} />
+          <input type="text" value={currentItem.item_total_amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} readOnly className={styles.readOnlyInput} />
         </div>
-        <button type="button" onClick={handleAddItem}>Add</button>
+        <button type="button" onClick={handleAddItem} className={styles.addButton}>Add</button>
       </div>
       
+      {/* Tabela de itens já adicionados */}
       {items.length > 0 && (
         <table className={styles.itemsTable}>
             <thead><tr><th>Produto</th><th>Qtd</th><th>Preço Unit.</th><th>Subtotal</th><th>Remover</th></tr></thead>
             <tbody>
               {items.map((item, index) => (
-                <tr key={index}>
+                <tr key={item.id || index}>
                   <td>{item.product_name_at_sale}</td>
                   <td style={{textAlign: 'right'}}>{item.quantity}</td>
-                  <td style={{textAlign: 'right'}}>R$ {parseFloat(item.unit_price_at_sale).toFixed(2)}</td>
-                  <td style={{textAlign: 'right'}}>R$ {parseFloat(item.item_total_amount).toFixed(2)}</td>
-                  <td style={{textAlign: 'center'}}><button type="button" onClick={() => handleRemoveItem(index)}>X</button></td>
+                  <td style={{textAlign: 'right'}}>{parseFloat(item.unit_price_at_sale).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                  <td style={{textAlign: 'right'}}>{parseFloat(item.item_total_amount).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                  <td style={{textAlign: 'center'}}><button type="button" onClick={() => handleRemoveItem(index)} className={styles.removeButton}>X</button></td>
                 </tr>
               ))}
             </tbody>
@@ -117,4 +100,5 @@ const SaleItemsManager = ({ items, setItems, productsList, loading, isEditing })
     </div>
   );
 };
+
 export default SaleItemsManager;

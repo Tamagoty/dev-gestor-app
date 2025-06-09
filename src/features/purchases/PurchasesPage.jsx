@@ -10,6 +10,7 @@ import PurchasesListTable from './components/PurchasesListTable';
 import PurchasePaymentModal from './components/PurchasePaymentModal';
 import ConfirmationModal from '../../components/ConfirmationModal';
 import Pagination from '../../components/Pagination';
+import ToggleSwitch from '../../components/ToggleSwitch';
 
 const initialFormData = {
   purchase_date: new Date().toISOString().split('T')[0],
@@ -20,12 +21,13 @@ const initialFormData = {
 };
 
 function PurchasesPage() {
-  const {
+   const {
     purchases, loadingPurchases, refetchPurchases,
     suppliers, productsList, costCentersList, loadingFormDataSources,
     currentPage, totalPages, totalItems, itemsPerPage, setCurrentPage,
     filterText, setFilterText,
-    sortColumn, sortDirection, handleSort
+    sortColumn, sortDirection, handleSort,
+    showOnlyOpen, setShowOnlyOpen // Adicionado
   } = usePurchases();
 
   const [formData, setFormData] = useState(initialFormData);
@@ -60,18 +62,41 @@ function PurchasesPage() {
   
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.product_id || !formData.supplier_id || !formData.cost_center_id || !formData.unit_price || !formData.quantity) {
-      toast.error("Preencha todos os campos obrigatórios.");
+    // Validações básicas no front-end
+    if (!formData.supplier_id || !formData.cost_center_id) {
+      toast.error("Preencha o Fornecedor e o Centro de Custo.");
       return;
     }
+    if (formData.items.length === 0) {
+      toast.error("Adicione pelo menos um item à compra.");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      const dataToSubmit = { ...formData, total_amount: displayTotalAmount };
-      const { error } = await supabase.from('purchases').upsert({ purchase_id: currentPurchaseId, ...dataToSubmit });
+      // Prepara os dados para a função RPC
+      const header_data = {
+        supplier_id: formData.supplier_id,
+        cost_center_id: formData.cost_center_id,
+        purchase_date: formData.purchase_date,
+        observations: formData.observations,
+        total_amount: purchaseTotalAmount // O total já calculado
+      };
+
+      const items_data = formData.items;
+
+      // Chama a função RPC!
+      const { error } = await supabase.rpc('create_purchase_with_items', {
+        header_data,
+        items_data
+      });
+
       if (error) throw error;
+
       toast.success('Compra salva com sucesso!');
       resetForm();
-      refetchPurchases();
+      refetchPurchases(); // Atualiza a lista de compras na tela
+
     } catch (error) {
       toast.error(`Erro ao salvar compra: ${error.message}`);
     } finally {
@@ -80,21 +105,17 @@ function PurchasesPage() {
   };
   
   const handleEdit = (purchase) => {
-    setIsEditing(true);
-    setCurrentPurchaseId(purchase.purchase_id);
-    setFormData({
-      purchase_date: purchase.purchase_date,
-      supplier_id: purchase.supplier_id,
-      cost_center_id: purchase.cost_center_id,
-      product_id: purchase.product_id,
-      product_name: purchase.product_name,
-      unit_price: purchase.unit_price,
-      quantity: purchase.quantity,
-      observations: purchase.observations || '',
-    });
-    formRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // A edição completa (cabeçalho + itens) é mais complexa.
+    // Vamos implementar em um segundo momento.
+    toast('A função de editar compras ainda não foi implementada.', { icon: '🚧' });
+    
+    /* Lógica futura:
+    1. Buscar a compra e seus itens.
+    2. Popular o formData com os dados do cabeçalho e da lista de itens.
+    3. Mudar o formulário para o modo de edição.
+    */
   };
-  
+
   const handleDelete = (purchase) => {
     setPurchaseToDelete(purchase);
     setShowDeleteModal(true);
@@ -104,10 +125,20 @@ function PurchasesPage() {
     if (!purchaseToDelete) return;
     setIsDeleting(true);
     try {
-      await supabase.from('transactions').delete().eq('reference_id', purchaseToDelete.purchase_id).eq('transaction_type', 'Compra');
-      await supabase.from('purchases').delete().eq('purchase_id', purchaseToDelete.purchase_id);
+      // 1. Deleta as transações de pagamento associadas
+      await supabase
+        .from('transactions')
+        .delete()
+        .eq('reference_id', purchaseToDelete.purchase_id)
+        .eq('transaction_type', 'Compra');
       
-      toast.success(`Compra de "${purchaseToDelete.product_name}" excluída!`);
+      // 2. Deleta o cabeçalho da compra. Os itens serão deletados em cascata pelo DB.
+      await supabase
+        .from('purchase_headers') // <-- MUDANÇA AQUI
+        .delete()
+        .eq('purchase_id', purchaseToDelete.purchase_id);
+      
+      toast.success(`Compra excluída!`);
       refetchPurchases();
     } catch (error) {
       toast.error(`Erro ao excluir: ${error.message}`);
@@ -127,30 +158,39 @@ function PurchasesPage() {
     <div className={styles.pageContainer}>
       <h1 className={styles.pageTitle}>Registro de Compras</h1>
       <PurchaseForm
-        formData={formData}
-        handleInputChange={handleInputChange}
-        handleSubmit={handleSubmit}
-        isEditing={isEditing}
-        isSubmitting={isSubmitting}
-        resetForm={resetForm}
-        suppliers={suppliers}
-        productsList={productsList}
-        costCentersList={costCentersList}
-        loading={loadingFormDataSources}
-        purchaseTotalAmount={purchaseTotalAmount}
-        formRef={formRef}
-      />
+  formData={formData}
+  setFormData={setFormData} // Mantemos esta para o array de itens
+  handleInputChange={handleInputChange} // <-- ADICIONE ESTA LINHA
+  handleSubmit={handleSubmit}
+  isEditing={isEditing}
+  isSubmitting={isSubmitting}
+  resetForm={resetForm}
+  suppliers={suppliers}
+  productsList={productsList}
+  costCentersList={costCentersList}
+  loading={loadingFormDataSources} // Corrigi aqui, antes estava 'loading'
+  purchaseTotalAmount={purchaseTotalAmount}
+  formRef={formRef}
+/>
       
       <hr style={{margin: '40px 0'}}/>
 
       <div className={styles.filterContainer}>
         <input
           type="text"
-          placeholder="Filtrar por produto..."
+          placeholder="Filtrar por fornecedor ou centro de custo..." // Placeholder atualizado
           className={styles.input}
           value={filterText}
           onChange={(e) => {
             setFilterText(e.target.value);
+            setCurrentPage(1);
+          }}
+        />
+        <ToggleSwitch 
+          label="Mostrar apenas com saldo a pagar"
+          checked={showOnlyOpen}
+          onChange={() => {
+            setShowOnlyOpen(!showOnlyOpen);
             setCurrentPage(1);
           }}
         />

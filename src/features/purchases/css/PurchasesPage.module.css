@@ -39,6 +39,7 @@
   grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
   gap: 15px;
   margin-bottom: 15px;
+  
 }
 
 /* ================================================= */
@@ -93,4 +94,68 @@
   gap: 5px;
   justify-content: center;
   flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .listTable thead {
+    /* Esconde o cabeçalho original em telas pequenas */
+    display: none;
+  }
+
+  .listTable tr {
+    /* Transforma cada linha em um "cartão" */
+    display: block;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
+
+  .listTable td {
+    display: flex;
+    justify-content: space-between; /* Alinha o rótulo e o valor */
+    align-items: center;
+    padding: 10px 15px;
+    text-align: right; /* Alinha o valor à direita */
+    border-bottom: 1px solid #eee;
+  }
+
+  .listTable td:last-child {
+    border-bottom: none;
+  }
+
+  .listTable td::before {
+    /* Adiciona o rótulo (data-label) antes do conteúdo */
+    content: attr(data-label);
+    font-weight: bold;
+    text-align: left;
+    margin-right: 10px;
+    color: #333;
+  }
+
+  /* Centraliza as ações no modo "cartão" */
+  .actionsCell div {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .statusCell {
+    /* Garante que a barra de progresso tenha espaço */
+    flex-direction: column;
+    align-items: flex-end;
+  }
+   .statusCell::before {
+     align-self: flex-start;
+  }
+}
+
+.filterContainer {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  flex-wrap: wrap; /* Para telas menores */
+  margin-bottom: 20px;
+}
+.filterContainer > .input {
+  flex-grow: 1; /* Faz o input ocupar o espaço disponível */
 }
