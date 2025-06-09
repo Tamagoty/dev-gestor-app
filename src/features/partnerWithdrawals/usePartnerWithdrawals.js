@@ -1,4 +1,4 @@
-// src/features/partnerWithdrawals/usePartnerWithdrawals.js
+// src/features/partnerWithdrawals/usePartnerWithdrawals.js (VERSÃO ATUALIZADA)
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import toast from 'react-hot-toast';
@@ -10,14 +10,12 @@ export function usePartnerWithdrawals() {
   const [loadingWithdrawals, setLoadingWithdrawals] = useState(true);
   const [listError, setListError] = useState(null);
   
-  // Estados para Paginação, Filtro e Ordenação
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [filterText, setFilterText] = useState('');
   const [sortColumn, setSortColumn] = useState('withdrawal_date');
   const [sortDirection, setSortDirection] = useState('desc');
 
-  // Estados para os dropdowns do formulário
   const [partners, setPartners] = useState([]);
   const [costCentersList, setCostCentersList] = useState([]);
   const [loadingFormSources, setLoadingFormSources] = useState(true);
@@ -31,12 +29,14 @@ export function usePartnerWithdrawals() {
       const from = (currentPage - 1) * ITEMS_PER_PAGE;
       const to = from + ITEMS_PER_PAGE - 1;
 
+      // MUDANÇA: Consultando a nova VIEW
       let query = supabase
-        .from('partner_withdrawals')
-        .select(`*, partner:partners(name), cost_center:cost_centers(name)`, { count: 'exact' });
+        .from('partner_withdrawals_view')
+        .select(`*`, { count: 'exact' });
 
+      // MUDANÇA: O filtro agora pode buscar na descrição OU no nome do sócio
       if (filterText.trim() !== '') {
-        query = query.ilike('description', `%${filterText.trim()}%`);
+        query = query.or(`description.ilike.%${filterText.trim()}%,partner_name.ilike.%${filterText.trim()}%`);
       }
 
       query = query

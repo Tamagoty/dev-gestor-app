@@ -42,8 +42,35 @@ function PartnerWithdrawalsPage() {
   };
 
   const handleSubmit = async (event) => {
-    // ... (sua lógica de submit com verificação de saldo) ...
-  };
+  event.preventDefault();
+  if (!formData.partner_id || !formData.cost_center_id || !formData.amount || !formData.description) {
+    toast.error("Preencha todos os campos obrigatórios (*).");
+    return;
+  }
+  setIsSubmitting(true);
+  try {
+    const dataToSubmit = {
+      ...formData,
+      amount: parseFloat(String(formData.amount).replace(',', '.'))
+    };
+
+    // Usando upsert para criar ou atualizar
+    const { error } = await supabase.from('partner_withdrawals').upsert({
+      withdrawal_id: currentWithdrawalId, // Será nulo se for um novo registro
+      ...dataToSubmit
+    });
+    
+    if (error) throw error;
+
+    toast.success(`Retirada ${isEditing ? 'atualizada' : 'registrada'} com sucesso!`);
+    resetForm();
+    refetchWithdrawals();
+  } catch (err) {
+    toast.error(`Erro ao salvar retirada: ${err.message}`);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   const handleEdit = (withdrawal) => {
     setIsEditing(true);
