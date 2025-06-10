@@ -1,4 +1,4 @@
-// src/features/partners/components/PartnerForm.jsx
+// src/features/partners/components/PartnerForm.jsx (VERSÃO SEGURA)
 import React from 'react';
 import { IMaskInput } from 'react-imask';
 import styles from '../css/PartnersPage.module.css';
@@ -10,17 +10,27 @@ const cpfCnpjMask = [
   { mask: '00.000.000/0000-00', lazy: false }
 ];
 
-const PartnerForm = ({
+export const PartnerForm = ({
   formData,
   handleInputChange,
   handleMaskedValueChange,
-  handleToggleChange, // Recebendo a função correta para o toggle
+  handleToggleChange,
   handleSubmit,
   isEditing,
   isSubmitting,
   resetForm,
   formRef
 }) => {
+  // =================================================================
+  // REDE DE SEGURANÇA ADICIONADA AQUI
+  // =================================================================
+  // Se, por qualquer motivo, formData não for um objeto válido,
+  // o componente não tentará renderizar o formulário, evitando o crash.
+  if (!formData) {
+    console.error("PartnerForm tentou renderizar sem a prop 'formData'.");
+    return <p>Carregando formulário...</p>; // Ou pode retornar 'null'
+  }
+
   return (
     <form onSubmit={handleSubmit} ref={formRef} className={styles.formSection}>
       <h2>{isEditing ? 'Editar Sócio' : 'Adicionar Novo Sócio'}</h2>
@@ -28,8 +38,10 @@ const PartnerForm = ({
       <div className={styles.formGrid}>
         <div className={styles.formGroup}>
           <label htmlFor="name">Nome Completo: *</label>
+          {/* O erro acontece aqui, ao tentar ler 'formData.name' quando formData é undefined */}
           <input type="text" id="name" name="name" value={formData.name} onChange={handleInputChange} required className={styles.input} />
         </div>
+        {/* ... resto do formulário permanece igual ... */}
         <div className={styles.formGroup}>
           <label htmlFor="cpf_cnpj">CPF/CNPJ:</label>
           <IMaskInput mask={cpfCnpjMask} value={formData.cpf_cnpj} onAccept={(value) => handleMaskedValueChange(value, 'cpf_cnpj')} placeholder="CPF ou CNPJ" id="cpf_cnpj" className={styles.input} />
@@ -40,7 +52,7 @@ const PartnerForm = ({
         </div>
         <div className={styles.formGroup}>
           <label htmlFor="phone">Telefone:</label>
-          <IMaskInput mask="(00) 0.0000-0000" value={formData.phone} onAccept={(value, maskRef) => handleMaskedValueChange(maskRef.value, 'phone')} placeholder="(##) #.####-####" id="phone" className={styles.input} />
+          <IMaskInput mask="(00) 00000-0000" value={formData.phone} onAccept={(value) => handleMaskedValueChange(value, 'phone')} placeholder="(##) #####-####" id="phone" className={styles.input} />
         </div>
         <div className={styles.formGroup}>
           <label htmlFor="equity_percentage">Participação (%):</label>
@@ -68,5 +80,3 @@ const PartnerForm = ({
     </form>
   );
 };
-
-export default PartnerForm;

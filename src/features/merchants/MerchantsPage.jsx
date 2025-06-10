@@ -57,15 +57,36 @@ function MerchantsPage() {
   
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!formData.name.trim()) { toast.error('O Nome é obrigatório.'); return; }
+    if (!formData.name.trim()) {
+      toast.error('O Nome é obrigatório.');
+      return;
+    }
     
     setIsSubmitting(true);
-    const { status_toggle, ...dataFields } = formData;
-    const dataToSubmit = { ...dataFields, status: status_toggle ? 'Ativo' : 'Inativo' };
     
     try {
-      const { error } = await supabase.from('merchants').upsert({ merchant_id: currentMerchantId, ...dataToSubmit });
+      // Primeiro, preparamos o objeto de dados a partir do formulário
+      const { status_toggle, ...dataFields } = formData;
+      const dataToSubmit = { 
+        ...dataFields, 
+        status: status_toggle ? 'Ativo' : 'Inativo' 
+      };
+
+      // =================================================================
+      // LÓGICA CORRIGIDA AQUI
+      // =================================================================
+      // Se estivermos editando, adicionamos o ID ao objeto a ser salvo.
+      // Se estivermos criando, não enviamos o ID, deixando o banco criá-lo.
+      if (isEditing) {
+        dataToSubmit.merchant_id = currentMerchantId;
+      }
+      
+      const { error } = await supabase
+        .from('merchants')
+        .upsert(dataToSubmit);
+
       if (error) throw error;
+
       toast.success(isEditing ? 'Dados atualizados!' : 'Adicionado com sucesso!');
       resetForm();
       refetchMerchants();

@@ -1,12 +1,13 @@
-// src/features/partners/PartnersPage.jsx
+// src/features/partners/PartnersPage.jsx (VERSÃO COMPLETA E CORRIGIDA)
 import React, { useState, useRef } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import toast from 'react-hot-toast';
 
 import styles from './css/PartnersPage.module.css';
 import { usePartners } from './usePartners';
-import PartnerForm from './components/PartnerForm';
+import { PartnerForm } from './components/PartnerForm'; // Usando a importação nomeada
 import PartnersListTable from './components/PartnersListTable';
+import PartnerDetailsModal from './components/PartnerDetailsModal';
 import ConfirmationModal from '../../components/ConfirmationModal';
 import Pagination from '../../components/Pagination';
 
@@ -29,14 +30,12 @@ function PartnersPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const formRef = useRef(null);
 
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedPartner, setSelectedPartner] = useState(null);
+
   const handleInputChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   const handleMaskedValueChange = (value, name) => setFormData(prev => ({ ...prev, [name]: value }));
-  
-  // Função específica para o Toggle
-  const handleToggleChange = (e) => {
-    setFormData(prev => ({ ...prev, status_form: e.target.checked }));
-  };
-
+  const handleToggleChange = (e) => setFormData(prev => ({ ...prev, status_form: e.target.checked }));
   const resetForm = () => { setFormData(initialFormData); setIsEditing(false); setCurrentPartnerId(null); };
 
   const handleEdit = (partner) => {
@@ -64,8 +63,12 @@ function PartnersPage() {
     try {
       const { status_form, ...dataFields } = formData;
       const dataToSubmit = { ...dataFields, status: status_form ? 'Ativo' : 'Inativo' };
+
+      if (isEditing) {
+        dataToSubmit.partner_id = currentPartnerId;
+      }
       
-      const { error } = await supabase.from('partners').upsert({ partner_id: currentPartnerId, ...dataToSubmit });
+      const { error } = await supabase.from('partners').upsert(dataToSubmit);
       if (error) throw error;
       
       toast.success('Sócio salvo com sucesso!');
@@ -104,7 +107,17 @@ function PartnersPage() {
     }
   };
 
- return (
+  const openDetailsModal = (partner) => {
+    setSelectedPartner(partner);
+    setShowDetailsModal(true);
+  };
+  
+  const closeDetailsModal = () => {
+    setShowDetailsModal(false);
+    setSelectedPartner(null);
+  };
+
+  return (
     <div className={styles.pageContainer}>
       <h1 className={styles.pageTitle}>Gerenciar Sócios</h1>
       <PartnerForm
@@ -118,6 +131,7 @@ function PartnersPage() {
         resetForm={resetForm}
         formRef={formRef}
       />
+      
       <hr style={{margin: '40px 0'}}/>
 
       <div className={styles.filterContainer}>
@@ -133,16 +147,17 @@ function PartnersPage() {
         />
       </div>
 
-         <PartnersListTable
+      <PartnersListTable
         partners={partners}
         handleEdit={handleEdit}
         handleDelete={handleDelete}
+        openDetailsModal={openDetailsModal}
         isLoading={loading}
         handleSort={handleSort}
         sortColumn={sortColumn}
         sortDirection={sortDirection}
       />
-
+      
       <Pagination
         currentPage={currentPage}
         totalPages={totalPages}
@@ -159,6 +174,12 @@ function PartnersPage() {
         title="Confirmar Exclusão de Sócio"
         message={partnerToDelete ? `Deseja realmente excluir o sócio ${partnerToDelete.name}?` : ""}
         isLoading={isDeleting}
+      />
+      
+      <PartnerDetailsModal 
+        isOpen={showDetailsModal}
+        onClose={closeDetailsModal}
+        partner={selectedPartner}
       />
     </div>
   );

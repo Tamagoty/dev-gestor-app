@@ -1,4 +1,4 @@
-// src/features/partners/usePartners.js
+// src/features/partners/usePartners.js (VERSÃO CORRIGIDA)
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import toast from 'react-hot-toast';
@@ -10,7 +10,6 @@ export function usePartners() {
   const [loading, setLoading] = useState(true);
   const [listError, setListError] = useState(null);
 
-  // 1. ESTADOS PARA CONTROLE COMPLETO
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [filterText, setFilterText] = useState('');
@@ -23,7 +22,6 @@ export function usePartners() {
     setLoading(true);
     try {
       setListError(null);
-
       const from = (currentPage - 1) * ITEMS_PER_PAGE;
       const to = from + ITEMS_PER_PAGE - 1;
 
@@ -31,13 +29,14 @@ export function usePartners() {
         .from('partners')
         .select('*', { count: 'exact' });
       
-      // Aplicando filtro por nome ou cpf/cnpj
       if (filterText.trim() !== '') {
-        constsearchTerm = `%${filterText.trim()}%`;
+        // =================================================================
+        // A CORREÇÃO ESTÁ AQUI: Adicionado espaço em 'const searchTerm'
+        // =================================================================
+        const searchTerm = `%${filterText.trim()}%`;
         query = query.or(`name.ilike.${searchTerm},cpf_cnpj.ilike.${searchTerm}`);
       }
       
-      // Aplicando ordenação e paginação
       query = query
         .order(sortColumn, { ascending: sortDirection === 'asc' })
         .range(from, to);

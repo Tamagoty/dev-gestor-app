@@ -1,4 +1,4 @@
-// src/features/merchants/components/MerchantForm.jsx
+// src/features/merchants/components/MerchantForm.jsx (VERSÃO ATUALIZADA)
 import React from 'react';
 import { IMaskInput } from 'react-imask';
 import styles from '../css/MerchantsPage.module.css';
@@ -36,30 +36,27 @@ const MerchantForm = ({
     <form onSubmit={handleSubmit} ref={formRef} className={styles.formSection}>
       <h2>{isEditing ? 'Editar Cliente/Fornecedor' : 'Adicionar Novo'}</h2>
 
-      <div style={{ display: 'flex', gap: '20px', marginBottom: '15px' }}>
-        <div style={{ flex: 1 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '15px' }}>
+        <div>
           <label>Nome/Razão Social: *</label>
           <input type="text" name="name" value={formData.name} onChange={handleInputChange} required className={styles.input} />
         </div>
-        <div style={{ flex: 1 }}>
+        <div>
           <label>Apelido/Nome Fantasia:</label>
           <input type="text" name="nickname" value={formData.nickname} onChange={handleInputChange} className={styles.input} />
         </div>
-      </div>
-
-      <div style={{ display: 'flex', gap: '20px', marginBottom: '15px' }}>
-        <div style={{ flex: 1 }}>
+        <div>
           <label>Telefone:</label>
-          <IMaskInput mask="(00) 0.0000-0000" value={formData.phone} onAccept={(value) => handleMaskedValueChange(value, 'phone')} placeholder="(##) #.####-####" type="tel" className={styles.input} />
+          <IMaskInput mask="(00) 00000-0000" value={formData.phone} onAccept={(value) => handleMaskedValueChange(value, 'phone')} placeholder="(##) #####-####" type="tel" className={styles.input} />
         </div>
-        <div style={{ flex: 1 }}>
+        <div>
           <label>Email:</label>
           <input type="email" name="email" value={formData.email} onChange={handleInputChange} className={styles.input} />
         </div>
       </div>
-
-      <div style={{ display: 'flex', gap: '20px', marginBottom: '15px', alignItems: 'center' }}>
-        <div style={{ flex: 1 }}>
+      
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '15px', alignItems: 'center' }}>
+        <div>
           <label>Tipo: *</label>
           <select name="merchant_type" value={formData.merchant_type} onChange={handleInputChange} required className={styles.select}>
             <option value="Cliente">Cliente</option>
@@ -67,7 +64,7 @@ const MerchantForm = ({
             <option value="Ambos">Ambos</option>
           </select>
         </div>
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
           <label style={{ marginRight: '10px' }}>Status:</label>
           <label className={styles.toggleSwitch}>
             <input type="checkbox" name="status_toggle" checked={formData.status_toggle} onChange={handleInputChange} />
@@ -79,7 +76,52 @@ const MerchantForm = ({
         </div>
       </div>
 
-      {/* ... (Restante do formulário com as classes corrigidas) ... */}
+      <hr style={{margin: '25px 0'}} />
+
+      {/* ================================================================= */}
+      {/* ===== NOVA SEÇÃO DE ENDEREÇO COM OS CAMPOS FALTANTES ===== */}
+      {/* ================================================================= */}
+      <fieldset style={{border: '1px solid #ddd', padding: '15px', borderRadius: '4px'}}>
+        <legend>Endereço</legend>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 3fr', gap: '20px', marginBottom: '15px' }}>
+          <div>
+            <label>CEP:</label>
+            <IMaskInput mask="00000-000" value={formData.zip_code} onAccept={(value) => handleMaskedValueChange(value, 'zip_code')} placeholder="00000-000" className={styles.input} />
+          </div>
+          <div>
+            <label>Logradouro:</label>
+            <input type="text" name="address_street" value={formData.address_street} onChange={handleInputChange} className={styles.input} />
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 100px', gap: '20px', marginBottom: '15px' }}>
+          <div>
+            <label>Número:</label>
+            <input type="text" name="address_number" value={formData.address_number} onChange={handleInputChange} className={styles.input} />
+          </div>
+          <div>
+            <label>Bairro:</label>
+            <input type="text" name="address_district" value={formData.address_district} onChange={handleInputChange} className={styles.input} />
+          </div>
+          {/* CAMPO CIDADE ADICIONADO */}
+          <div>
+            <label>Cidade:</label>
+            <input type="text" name="address_city" value={formData.address_city} onChange={handleInputChange} className={styles.input} />
+          </div>
+          {/* CAMPO UF ADICIONADO */}
+          <div>
+            <label>UF:</label>
+            <select name="address_state" value={formData.address_state} onChange={handleInputChange} className={styles.select}>
+              {brazilianStates.map(s => <option key={s.sigla} value={s.sigla}>{s.sigla}</option>)}
+            </select>
+          </div>
+        </div>
+      </fieldset>
+      
+      <div style={{ marginTop: '20px' }}>
+        <label>Observações:</label>
+        <textarea name="observations" value={formData.observations} onChange={handleInputChange} rows="3" className={styles.textarea} />
+      </div>
 
       <FormActions
         isEditing={isEditing}

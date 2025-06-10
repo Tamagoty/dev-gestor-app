@@ -16,7 +16,9 @@
   color: #333;
 }
 
-.input, .select, .textarea {
+.input,
+.select,
+.textarea {
   width: 100%;
   padding: 10px;
   box-sizing: border-box;
@@ -36,7 +38,7 @@
   border-collapse: collapse;
   margin-top: 20px;
   font-size: 0.9rem;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   border-radius: 4px;
   overflow: hidden;
 }
@@ -84,20 +86,146 @@
 /* ========= FIM DA CORREÇÃO DA TABELA =========== */
 /* =============================================== */
 
-
 /* Modal de Detalhes */
-.detailsModalOverlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 1050; }
-.detailsModalContent { background-color: #fff; padding: 25px; border-radius: 8px; width: 90%; max-width: 650px; max-height: 85vh; overflow-y: auto; color: #333; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
-.detailsModalContent h3 { margin-top: 0; color: #007bff; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-.detailsModalContent p { margin: 8px 0; line-height: 1.6; }
-.detailsModalContent p strong { color: #555; min-width: 150px; display: inline-block; }
-.detailsModalCloseButton { display: block; margin: 25px auto 0 auto; padding: 10px 20px; background-color: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem; }
-.detailsModalCloseButton:hover { background-color: #5a6268; }
+.detailsModalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1050;
+}
+.detailsModalContent {
+  background-color: #fff;
+  padding: 25px;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 650px;
+  max-height: 85vh;
+  overflow-y: auto;
+  color: #333;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+.detailsModalContent h3 {
+  margin-top: 0;
+  color: #007bff;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+.detailsModalContent p {
+  margin: 8px 0;
+  line-height: 1.6;
+}
+.detailsModalContent p strong {
+  color: #555;
+  min-width: 150px;
+  display: inline-block;
+}
+.detailsModalCloseButton {
+  display: block;
+  margin: 25px auto 0 auto;
+  padding: 10px 20px;
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+.detailsModalCloseButton:hover {
+  background-color: #5a6268;
+}
 
 /* Toggle Switch */
-.toggleSwitch { position: relative; display: inline-block; width: 50px; height: 28px; }
-.toggleSwitch input { opacity: 0; width: 0; height: 0; }
-.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 28px; }
-.slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
-input:checked + .slider { background-color: #28a745; }
-input:checked + .slider:before { transform: translateX(22px); }
+.toggleSwitch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 28px;
+}
+.toggleSwitch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.4s;
+  border-radius: 28px;
+}
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+}
+input:checked + .slider {
+  background-color: #28a745;
+}
+input:checked + .slider:before {
+  transform: translateX(22px);
+}
+
+@media screen and (max-width: 768px) {
+  /* Esconde o cabeçalho da tabela em telas pequenas */
+  .listTable thead {
+    display: none;
+  }
+
+  /* Transforma cada linha em um "card" */
+  .listTable tr {
+    display: block;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #fff !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  /*
+   * A MUDANÇA PRINCIPAL ESTÁ AQUI:
+   * Tornamos cada célula um container Flexbox.
+   */
+  .listTable td {
+    display: flex;            /* 1. Ativa o Flexbox */
+    justify-content: space-between; /* 2. Empurra o label e o conteúdo para lados opostos */
+    align-items: center;      /* 3. Alinha verticalmente no centro */
+    padding: 12px 15px;
+    border-bottom: 1px dotted #eee;
+    text-align: right;        /* Alinha o texto do conteúdo à direita */
+  }
+
+  .listTable td:last-child {
+    border-bottom: none;
+  }
+
+  /* O rótulo (label) que aparece antes do conteúdo */
+  .listTable td::before {
+    content: attr(data-label);
+    font-weight: bold;
+    text-align: left;
+    margin-right: 10px; /* Espaço entre o label e o conteúdo */
+  }
+
+  /* Estilo específico para a célula de ações, se necessário */
+  .actionsCell div {
+    /* Este seletor garante que os botões dentro da célula de ações fiquem juntos */
+    display: flex;
+    gap: 5px;
+  }
+}

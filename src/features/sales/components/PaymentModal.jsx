@@ -48,8 +48,10 @@ const PaymentModal = ({ isOpen, onClose, saleData, onSuccess }) => {
     }
   }, [isOpen, saleData]);
 
-  const handleInputChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: value }));
-
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);

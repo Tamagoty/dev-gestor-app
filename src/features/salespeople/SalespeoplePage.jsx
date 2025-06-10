@@ -55,23 +55,45 @@ function SalespeoplePage() {
     formRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    if (!formData.name.trim()) { toast.error('O nome é obrigatório.'); return; }
-    
-    setIsSubmitting(true);
-    try {
-      const { error } = await supabase.from('salespeople').upsert({ salesperson_id: currentSalespersonId, ...formData });
-      if (error) throw error;
-      toast.success(isEditing ? 'Vendedor atualizado!' : 'Vendedor adicionado!');
-      resetForm();
-      refetch();
-    } catch (err) {
-      toast.error(`Erro: ${err.message}`);
-    } finally {
-      setIsSubmitting(false);
+ const handleSubmit = async (event) => {
+  event.preventDefault();
+  if (!formData.name.trim()) {
+    toast.error('O nome do vendedor é um campo obrigatório.');
+    return;
+  }
+  
+  setIsSubmitting(true);
+  try {
+    // Objeto base com os dados do formulário
+    const dataToSubmit = { ...formData };
+
+    // =================================================================
+    // LÓGICA CORRIGIDA AQUI
+    // =================================================================
+    // Se estivermos editando, adicionamos o ID ao objeto a ser salvo.
+    // Se estivermos criando, o campo 'salesperson_id' não é enviado,
+    // permitindo que o banco de dados gere o UUID automaticamente.
+    if (isEditing) {
+      dataToSubmit.salesperson_id = currentSalespersonId;
     }
-  };
+
+    const { error } = await supabase
+      .from('salespeople')
+      .upsert(dataToSubmit); // O upsert agora recebe o objeto montado corretamente
+
+    if (error) {
+      throw error;
+    }
+
+    toast.success(`Vendedor ${isEditing ? 'atualizado' : 'adicionado'} com sucesso!`);
+    resetForm();
+    refetch();
+  } catch (err) {
+    toast.error(`Erro ao salvar: ${err.message}`);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   const handleDeleteSalesperson = (person) => {
     setSalespersonToDelete(person);
